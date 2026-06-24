@@ -3,6 +3,7 @@ import { useAuth } from '@clerk/react'
 import { api } from '../lib/api'
 import { useUserContext } from '../context/UserContext'
 import TopBar from '../components/TopBar'
+import PredictionsSection from '../components/PredictionsSection'
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'snacks', 'dinner']
 
@@ -261,6 +262,8 @@ export default function AdminDashboard() {
       <TopBar title={profile?.name || 'Admin'} subtitle="MessLoo · Admin Dashboard" />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-8 py-8 flex flex-col gap-10">
+        <PredictionsSection />
+
         <section>
           <h1 className="text-xl font-semibold text-gray-100 mb-1">Manage Blocks</h1>
           <p className="text-sm text-gray-500 mb-5">

@@ -70,4 +70,6 @@ export const api = {
 
   askChat: (token, question) =>
     apiFetch('/chat', token, { method: 'POST', body: JSON.stringify({ question }) }),
+
+  getPredictionsToday: (token) => apiFetch('/predict/today', token),
 }

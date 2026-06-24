@@ -1,35 +1,43 @@
-const { ChromaClient } = require('chromadb')
-const { pipeline } = require('@xenova/transformers')
+const { HfInference } = require('@huggingface/inference')
 const Groq = require('groq-sdk')
+const supabase = require('../supabase')
 
-const COLLECTION_NAME = 'mess_menus'
+const hf = new HfInference(process.env.HUGGINGFACE_API_KEY)
+const MODEL = 'sentence-transformers/all-MiniLM-L6-v2'
 
-let embedder = null
-
-async function getEmbedder() {
-  if (!embedder) {
-    embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2')
+async function getEmbedding(text) {
+  const result = await hf.featureExtraction({
+    model: MODEL,
+    inputs: text,
+  })
+  if (Array.isArray(result[0])) {
+    const len = result[0].length
+    const mean = new Array(len).fill(0)
+    for (const vec of result) {
+      for (let i = 0; i < len; i++) mean[i] += vec[i]
+    }
+    return mean.map(v => v / result.length)
   }
-  return embedder
+  return result
 }
 
 async function queryRAG(question, blockCategory) {
   // Step 1 — embed the question
-  const embed = await getEmbedder()
-  const output = await embed(question, { pooling: 'mean', normalize: true })
-  const questionVector = Array.from(output.data)
+  const questionVector = await getEmbedding(question)
 
-  // Step 2 — search ChromaDB
-  const client = new ChromaClient()
-  const collection = await client.getCollection({ name: COLLECTION_NAME })
-
-  const results = await collection.query({
-    queryEmbeddings: [questionVector],
-    nResults: 5,
-    where: { block_category: blockCategory }
+  // Step 2 — search pgvector
+  const { data: results, error } = await supabase.rpc('match_menus', {
+    query_embedding: questionVector,
+    match_count: 5,
+    filter_block_category: blockCategory
   })
 
-  const relevantChunks = results.documents[0]
+  if (error) {
+    console.error('pgvector search error:', error.message)
+    throw error
+  }
+
+  const relevantChunks = results.map(r => r.content)
 
   // Step 3 — build prompt
   const context = relevantChunks.join('\n\n')

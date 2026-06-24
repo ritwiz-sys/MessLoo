@@ -175,7 +175,7 @@ router.get('/summary', verifyAuth, async (req, res) => {
     if (!byBlockMap[blockId]) {
       byBlockMap[blockId] = {
         block_id: block?.id ?? null,
-        block_name: block?.block_name || block?.name || block?.label || 'Unknown block',
+        block_name: block?.name || 'Unknown block',
         catering_company: block?.catering_company || null,
         total: 0,
         eating: 0,

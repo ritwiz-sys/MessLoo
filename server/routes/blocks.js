@@ -25,7 +25,11 @@ router.get('/', async (req, res) => {
     return res.status(500).json({ error: error.message })
   }
 
-  res.json({ data })
+  // The real column is `name`, but the client (and the rest of this API)
+  // speaks `block_name` — translate here so both sides stay consistent.
+  const mapped = (data || []).map((b) => ({ ...b, block_name: b.name }))
+
+  res.json({ data: mapped })
 })
 
 router.get('/protected-test', verifyAuth, async (req, res) => {
@@ -51,7 +55,7 @@ router.post('/', verifyAuth, async (req, res) => {
   const { data, error } = await supabase
     .from('blocks')
     .insert({
-      block_name,
+      name: block_name,
       block_category,
       catering_company: catering_company || null,
     })
@@ -62,7 +66,7 @@ router.post('/', verifyAuth, async (req, res) => {
     return res.status(500).json({ error: error.message })
   }
 
-  res.json({ data })
+  res.json({ data: { ...data, block_name: data.name } })
 })
 
 // Admin edits an existing block's name, category, or catering company.
@@ -74,7 +78,7 @@ router.patch('/:id', verifyAuth, async (req, res) => {
 
   const { block_name, block_category, catering_company } = req.body
   const updates = {}
-  if (block_name !== undefined) updates.block_name = block_name
+  if (block_name !== undefined) updates.name = block_name
   if (block_category !== undefined) updates.block_category = block_category
   if (catering_company !== undefined) updates.catering_company = catering_company
 
@@ -93,7 +97,7 @@ router.patch('/:id', verifyAuth, async (req, res) => {
     return res.status(500).json({ error: error.message })
   }
 
-  res.json({ data })
+  res.json({ data: { ...data, block_name: data.name } })
 })
 
 // Admin removes a block entirely.

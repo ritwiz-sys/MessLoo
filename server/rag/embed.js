@@ -1,14 +1,9 @@
 require('dotenv').config()
-const { ChromaClient } = require('chromadb')
-const { pipeline } = require('@xenova/transformers')
+const { HfInference } = require('@huggingface/inference')
 const supabase = require('../supabase')
 
-const COLLECTION_NAME = 'mess_menus'
-
-async function getEmbedder() {
-  const embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2')
-  return embedder
-}
+const hf = new HfInference(process.env.HUGGINGFACE_API_KEY)
+const MODEL = 'sentence-transformers/all-MiniLM-L6-v2'
 
 function chunkFromRow(row) {
   const date = new Date(row.date).toLocaleDateString('en-IN', {
@@ -19,6 +14,24 @@ function chunkFromRow(row) {
   })
   const special = row.is_special ? ' (Special meal)' : ''
   return `On ${date}, ${row.block_category} block ${row.meal_type}${special} includes: ${row.items}`
+}
+
+async function getEmbedding(text) {
+  const result = await hf.featureExtraction({
+    model: MODEL,
+    inputs: text,
+  })
+  // Mean pooling
+  const vectors = result
+  if (Array.isArray(vectors[0])) {
+    const len = vectors[0].length
+    const mean = new Array(len).fill(0)
+    for (const vec of vectors) {
+      for (let i = 0; i < len; i++) mean[i] += vec[i]
+    }
+    return mean.map(v => v / vectors.length)
+  }
+  return vectors
 }
 
 async function embedMenus() {
@@ -35,21 +48,9 @@ async function embedMenus() {
 
   console.log(`Fetched ${menus.length} menu rows`)
 
-  console.log('Loading embedding model...')
-  const embedder = await getEmbedder()
-
-  const client = new ChromaClient()
-  
-  // Delete existing collection if exists to avoid duplicates
-  try {
-    await client.deleteCollection({ name: COLLECTION_NAME })
-    console.log('Deleted existing collection')
-  } catch {
-    console.log('No existing collection found')
-  }
-
-  const collection = await client.createCollection({ name: COLLECTION_NAME })
-  console.log('Created fresh collection')
+  // Clear existing embeddings
+  await supabase.from('menu_embeddings').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+  console.log('Cleared existing embeddings')
 
   console.log('Embedding and storing chunks...')
 
@@ -57,27 +58,33 @@ async function embedMenus() {
     const row = menus[i]
     const chunk = chunkFromRow(row)
 
-    const output = await embedder(chunk, { pooling: 'mean', normalize: true })
-    const vector = Array.from(output.data)
+    const embedding = await getEmbedding(chunk)
 
-    await collection.add({
-      ids: [row.id],
-      embeddings: [vector],
-      documents: [chunk],
-      metadatas: [{
+    const { error: insertError } = await supabase
+      .from('menu_embeddings')
+      .insert({
+        menu_id: row.id,
+        content: chunk,
+        embedding,
         date: row.date,
         meal_type: row.meal_type,
         block_category: row.block_category,
-        is_special: row.is_special ? 'true' : 'false'
-      }]
-    })
+        is_special: row.is_special
+      })
+
+    if (insertError) {
+      console.error(`Error inserting row ${i}:`, insertError.message)
+    }
 
     if ((i + 1) % 20 === 0) {
       console.log(`Embedded ${i + 1}/${menus.length} rows`)
     }
+
+    // Small delay to avoid HF rate limits
+    await new Promise(r => setTimeout(r, 100))
   }
 
-  console.log('Done! All menus embedded into ChromaDB')
+  console.log('Done! All menus embedded into Supabase pgvector')
 }
 
 embedMenus()
