@@ -1,8 +1,12 @@
+require('dotenv').config()
+
 const express = require('express')
 const menusRouter = require('./routes/menus')
 const cors = require('cors')
 const attendanceRouter = require('./routes/attendance')
-require('dotenv').config()
+const chatRouter = require('./routes/chat')
+
+
 
 const app = express()
 
@@ -10,7 +14,7 @@ const PORT = process.env.PORT || 3000
 
 app.use(cors({
   origin: 'http://localhost:5173',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }))
 app.options('/{*path}', cors())
@@ -23,6 +27,7 @@ app.use('/blocks', blocksRouter)
 app.use('/users', usersRouter)
 app.use('/menus', menusRouter)
 app.use('/attendance', attendanceRouter)
+app.use('/chat', chatRouter)
 
 app.get('/', (req, res) => {
   res.json({ message: 'MessLoo server is running' })

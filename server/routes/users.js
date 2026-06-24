@@ -38,6 +38,44 @@ router.post('/sync', verifyAuth, async (req, res) => {
   res.json({ data: newUser })
 })
 
+// Student updates their own profile — primarily used so they can pick
+// which MH/LH block they belong to after signing up.
+router.patch('/me', verifyAuth, async (req, res) => {
+  const { block_id, college_id, name } = req.body
+
+  const updates = {}
+  if (block_id !== undefined) updates.block_id = block_id
+  if (college_id !== undefined) updates.college_id = college_id
+  if (name !== undefined) updates.name = name
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: 'No fields to update' })
+  }
+
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('clerk_user_id', req.userId)
+    .single()
+
+  if (userError || !user) {
+    return res.status(404).json({ error: 'User not found' })
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .update(updates)
+    .eq('id', user.id)
+    .select('*, blocks(*)')
+    .single()
+
+  if (error) {
+    return res.status(500).json({ error: error.message })
+  }
+
+  res.json({ data })
+})
+
 router.get('/me', verifyAuth, async (req, res) => {
   const { data, error } = await supabase
     .from('users')
