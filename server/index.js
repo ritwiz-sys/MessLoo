@@ -1,8 +1,11 @@
 const express = require('express')
+const menusRouter = require('./routes/menus')
 const cors = require('cors')
+const attendanceRouter = require('./routes/attendance')
 require('dotenv').config()
 
 const app = express()
+
 const PORT = process.env.PORT || 3000
 
 app.use(cors({
@@ -18,6 +21,8 @@ const usersRouter = require('./routes/users')
 
 app.use('/blocks', blocksRouter)
 app.use('/users', usersRouter)
+app.use('/menus', menusRouter)
+app.use('/attendance', attendanceRouter)
 
 app.get('/', (req, res) => {
   res.json({ message: 'MessLoo server is running' })
