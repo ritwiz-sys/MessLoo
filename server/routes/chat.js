@@ -11,7 +11,7 @@ router.post('/', verifyAuth, async (req, res) => {
     return res.status(400).json({ error: 'Question is required' })
   }
 
-  // Get user's block category
+  // Get user's block category and mess type
   const { data: user, error: userError } = await supabase
     .from('users')
     .select('*, blocks(*)')
@@ -23,9 +23,10 @@ router.post('/', verifyAuth, async (req, res) => {
   }
 
   const blockCategory = user.blocks?.block_category || 'MH'
+  const messType = user.blocks?.mess_type || null
 
   try {
-    const result = await queryRAG(question, blockCategory)
+    const result = await queryRAG(question, blockCategory, messType, [])
     res.json(result)
   } catch (error) {
     console.error('RAG error:', error.message)

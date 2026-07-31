@@ -21,16 +21,29 @@ async function getEmbedding(text) {
   return result
 }
 
-async function queryRAG(question, blockCategory) {
+/**
+ * Query the RAG pipeline to answer a mess-related question.
+ *
+ * @param {string} question - The user's question
+ * @param {string} blockCategory - 'MH' or 'LH'
+ * @param {string|null} messType - e.g. 'veg', 'non-veg', or null
+ * @param {Array<{role: string, content: string}>} conversationHistory - Prior messages (oldest first)
+ */
+async function queryRAG(question, blockCategory, messType = null, conversationHistory = []) {
   // Step 1 — embed the question
   const questionVector = await getEmbedding(question)
 
-  // Step 2 — search pgvector
-  const { data: results, error } = await supabase.rpc('match_menus', {
+  // Step 2 — vector search in pgvector
+  const rpcParams = {
     query_embedding: questionVector,
     match_count: 5,
-    filter_block_category: blockCategory
-  })
+    filter_block_category: blockCategory,
+  }
+  if (messType) {
+    rpcParams.filter_mess_type = messType
+  }
+
+  const { data: results, error } = await supabase.rpc('match_menus', rpcParams)
 
   if (error) {
     console.error('pgvector search error:', error.message)
@@ -38,32 +51,43 @@ async function queryRAG(question, blockCategory) {
   }
 
   const relevantChunks = results.map(r => r.content)
-
-  // Step 3 — build prompt
   const context = relevantChunks.join('\n\n')
 
-  const prompt = `You are a helpful mess assistant for VIT Amaravati students.
-Answer the student's question based ONLY on the mess menu context provided below.
+  // Step 3 — build system prompt with context
+  const messTypeLabel = messType ? ` (${messType})` : ''
+  const systemPrompt = `You are a helpful mess assistant for VIT Amaravati students.
+The student is in the ${blockCategory} block${messTypeLabel}.
+Answer questions based ONLY on the mess menu context provided below.
 If the answer is not in the context, say "I don't have that information in the current menu."
-Be concise and friendly.
+Be concise and friendly. Do not make up dishes or dates.
 
 Menu Context:
-${context}
+${context}`
 
-Student Question: ${question}`
+  // Step 4 — build messages array: system + history + new user message
+  const historyMessages = conversationHistory.map(msg => ({
+    role: msg.role,
+    content: msg.content,
+  }))
 
-  // Step 4 — call Groq
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...historyMessages,
+    { role: 'user', content: question },
+  ]
+
+  // Step 5 — call Groq
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
   const completion = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.3
+    messages,
+    temperature: 0.3,
   })
 
   return {
     answer: completion.choices[0].message.content,
-    sources: relevantChunks
+    sources: relevantChunks,
   }
 }
 
