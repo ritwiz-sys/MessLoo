@@ -1,19 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
+  --color-primary: #E23744;
+  --color-secondary: #FF8C00;
+  --color-accent: #FFB830;
+  --color-bg: #FFF8F0;
+  --color-card: #FFFFFF;
+  --color-text: #1C1C1E;
+  --color-muted: #6B6B6B;
+  --color-border: #F0E6D3;
+  --color-success: #2ECC71;
 }
 
 html, body, #root {
   min-height: 100%;
-  background-color: #0b0b10;
+  background-color: var(--color-bg);
 }
 
 body {
   margin: 0;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color: var(--color-text);
 }
 
 * {
@@ -21,13 +30,22 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2e2e3a;
-  border-radius: 8px;
+  background: #F0E6D3;
+  border-radius: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* Hide scrollbar for horizontal pill scrollers */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

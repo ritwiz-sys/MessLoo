@@ -2,45 +2,71 @@ import { SignIn } from '@clerk/react'
 
 const clerkAppearance = {
   variables: {
-    colorPrimary: '#c084fc',
-    colorBackground: '#15151c',
-    colorInputBackground: '#1f1f29',
-    colorInputText: '#f3f4f6',
-    colorText: '#f3f4f6',
-    colorTextSecondary: '#9ca3af',
-    colorDanger: '#f87171',
-    borderRadius: '0.75rem',
+    colorPrimary: '#E23744',
+    colorBackground: '#FFFFFF',
+    colorInputBackground: '#FFF8F0',
+    colorInputText: '#1C1C1E',
+    colorText: '#1C1C1E',
+    colorTextSecondary: '#6B6B6B',
+    colorDanger: '#E23744',
+    borderRadius: '0.875rem',
+    fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
   },
   elements: {
     rootBox: 'w-full',
-    card: 'bg-[#15151c] border border-white/10 shadow-2xl shadow-black/40',
-    headerTitle: 'text-gray-100',
-    headerSubtitle: 'text-gray-400',
-    socialButtonsBlockButton: 'border border-white/10 hover:bg-white/5 text-gray-200',
-    formButtonPrimary: 'bg-purple-500 hover:bg-purple-400 text-black font-medium',
-    formFieldInput: 'bg-[#1f1f29] border border-white/10 text-gray-100',
-    formFieldLabel: 'text-gray-300',
-    footerActionText: 'text-gray-400',
-    footerActionLink: 'text-purple-400 hover:text-purple-300',
-    identityPreviewText: 'text-gray-300',
-    identityPreviewEditButton: 'text-purple-400',
-    dividerLine: 'bg-white/10',
-    dividerText: 'text-gray-500',
+    card: 'shadow-none border-0 bg-transparent',
+    headerTitle: 'text-[#1C1C1E] font-bold',
+    headerSubtitle: 'text-[#6B6B6B]',
+    socialButtonsBlockButton: 'border border-[#F0E6D3] hover:bg-[#FFF8F0] text-[#1C1C1E] font-medium',
+    formButtonPrimary: 'font-semibold',
+    formFieldInput: 'border border-[#F0E6D3] text-[#1C1C1E] focus:border-[#E23744]',
+    formFieldLabel: 'text-[#1C1C1E] font-medium text-sm',
+    footerActionText: 'text-[#6B6B6B]',
+    footerActionLink: 'text-[#E23744] font-semibold hover:text-[#c5313d]',
+    dividerLine: 'bg-[#F0E6D3]',
+    dividerText: 'text-[#6B6B6B]',
   },
 }
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen w-full bg-[#0b0b10] flex flex-col items-center justify-center px-4 py-12">
-      <div className="mb-8 flex flex-col items-center gap-2">
-        <div className="h-12 w-12 rounded-2xl bg-purple-500/15 border border-purple-400/30 flex items-center justify-center text-2xl">
-          🍽️
+    <div
+      className="min-h-screen w-full flex flex-col items-center justify-center px-4 py-10"
+      style={{ background: 'linear-gradient(160deg, #FFF8F0 0%, #FFEEE8 50%, #FFF3E0 100%)' }}
+    >
+      {/* Decorative blobs */}
+      <div
+        className="absolute top-0 left-0 w-72 h-72 rounded-full opacity-20 blur-3xl pointer-events-none"
+        style={{ background: '#E23744', transform: 'translate(-40%, -40%)' }}
+      />
+      <div
+        className="absolute bottom-0 right-0 w-64 h-64 rounded-full opacity-15 blur-3xl pointer-events-none"
+        style={{ background: '#FF8C00', transform: 'translate(40%, 40%)' }}
+      />
+
+      {/* Logo */}
+      <div className="relative mb-6 flex flex-col items-center gap-2 text-center">
+        <div
+          className="h-16 w-16 rounded-3xl flex items-center justify-center text-3xl mb-1"
+          style={{ background: '#E23744', boxShadow: '0 8px 24px rgba(226,55,68,0.3)' }}
+        >
+          🍱
         </div>
-        <h1 className="text-2xl font-semibold text-gray-100 tracking-tight">MessLoo</h1>
-        <p className="text-sm text-gray-500">VIT-AP mess, sorted out.</p>
+        <h1 className="text-3xl font-extrabold" style={{ color: '#1C1C1E' }}>MessLoo</h1>
+        <p className="text-sm font-medium" style={{ color: '#6B6B6B' }}>
+          Your VIT-AP mess, reimagined.
+        </p>
       </div>
 
-      <div className="w-full max-w-sm">
+      {/* Card */}
+      <div
+        className="relative w-full max-w-sm rounded-3xl p-6"
+        style={{
+          background: '#FFFFFF',
+          border: '1px solid #F0E6D3',
+          boxShadow: '0 8px 40px rgba(226,55,68,0.1)',
+        }}
+      >
         <SignIn
           routing="path"
           path="/login"
@@ -51,7 +77,9 @@ export default function LoginPage() {
         />
       </div>
 
-      <p className="mt-8 text-xs text-gray-600">© {new Date().getFullYear()} MessLoo · VIT-AP</p>
+      <p className="relative mt-6 text-xs" style={{ color: '#D1C4A8' }}>
+        © {new Date().getFullYear()} MessLoo · VIT-AP
+      </p>
     </div>
   )
 }

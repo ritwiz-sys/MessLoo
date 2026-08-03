@@ -4,30 +4,41 @@ import { UserProvider, useUserContext } from './context/UserContext'
 import LoginPage from './pages/LoginPage'
 import OnboardingPage from './pages/OnboardingPage'
 import StudentDashboard from './pages/StudentDashboard'
+import MenuPage from './pages/MenuPage'
+import ChatPage from './pages/ChatPage'
+import ProfilePage from './pages/ProfilePage'
 import AdminDashboard from './pages/AdminDashboard'
 
 const ADMIN_ROLES = ['super_admin', 'company_admin']
+const STUDENT_ROLES = ['student']
 
 function FullScreenLoader() {
   return (
-    <div className="min-h-screen w-full bg-[#0b0b10] flex items-center justify-center">
+    <div
+      className="min-h-screen w-full flex items-center justify-center"
+      style={{ background: 'linear-gradient(160deg, #FFF8F0 0%, #FFEEE8 100%)' }}
+    >
       <div className="flex flex-col items-center gap-3">
-        <div className="h-10 w-10 rounded-2xl bg-purple-500/15 border border-purple-400/30 flex items-center justify-center text-xl animate-pulse">
-          🍽️
+        <div
+          className="h-14 w-14 rounded-3xl flex items-center justify-center text-2xl"
+          style={{
+            background: '#E23744',
+            boxShadow: '0 8px 24px rgba(226,55,68,0.25)',
+            animation: 'pulse 1.5s ease-in-out infinite',
+          }}
+        >
+          🍱
         </div>
-        <p className="text-sm text-gray-500">Loading MessLoo…</p>
+        <p className="text-sm font-semibold" style={{ color: '#6B6B6B' }}>Loading MessLoo…</p>
       </div>
     </div>
   )
 }
 
-/** Sends a signed-in user to the dashboard that matches their role. Students
- * who haven't picked a block yet are sent to onboarding first. */
+/** Sends a signed-in user to the dashboard that matches their role. */
 function RoleHome() {
   const { role, blockCategory, loading } = useUserContext()
-
   if (loading) return <FullScreenLoader />
-
   if (ADMIN_ROLES.includes(role)) return <Navigate to="/admin" replace />
   if (!blockCategory) return <Navigate to="/onboarding" replace />
   return <Navigate to="/dashboard" replace />
@@ -40,32 +51,32 @@ function ProtectedRoute({ allowedRoles, children }) {
   const location = useLocation()
 
   if (!isLoaded || loading) return <FullScreenLoader />
-
-  if (!isSignedIn) {
-    return <Navigate to="/login" replace state={{ from: location }} />
-  }
-
+  if (!isSignedIn) return <Navigate to="/login" replace state={{ from: location }} />
   if (allowedRoles && !allowedRoles.includes(role)) {
     return <Navigate to={ADMIN_ROLES.includes(role) ? '/admin' : '/dashboard'} replace />
   }
-
   return children
 }
 
-/** Same as ProtectedRoute, but also makes sure a student has completed
- * onboarding (picked their block) before letting them through. */
+/** Ensures student completed onboarding before accessing main app. */
 function RequireBlock({ children }) {
   const { blockCategory, loading } = useUserContext()
-
   if (loading) return <FullScreenLoader />
   if (!blockCategory) return <Navigate to="/onboarding" replace />
-
   return children
+}
+
+/** Shared wrapper for all student tab pages. */
+function StudentPage({ children }) {
+  return (
+    <ProtectedRoute allowedRoles={STUDENT_ROLES}>
+      <RequireBlock>{children}</RequireBlock>
+    </ProtectedRoute>
+  )
 }
 
 function AppRoutes() {
   const { isLoaded, isSignedIn } = useAuth()
-
   if (!isLoaded) return <FullScreenLoader />
 
   return (
@@ -77,21 +88,19 @@ function AppRoutes() {
       <Route
         path="/onboarding"
         element={
-          <ProtectedRoute allowedRoles={['student']}>
+          <ProtectedRoute allowedRoles={STUDENT_ROLES}>
             <OnboardingPage />
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={['student']}>
-            <RequireBlock>
-              <StudentDashboard />
-            </RequireBlock>
-          </ProtectedRoute>
-        }
-      />
+
+      {/* ── Student tab pages ── */}
+      <Route path="/dashboard" element={<StudentPage><StudentDashboard /></StudentPage>} />
+      <Route path="/menu"      element={<StudentPage><MenuPage /></StudentPage>} />
+      <Route path="/chat"      element={<StudentPage><ChatPage /></StudentPage>} />
+      <Route path="/profile"   element={<StudentPage><ProfilePage /></StudentPage>} />
+
+      {/* ── Admin ── */}
       <Route
         path="/admin"
         element={
@@ -100,6 +109,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="*"
         element={isSignedIn ? <RoleHome /> : <Navigate to="/login" replace />}

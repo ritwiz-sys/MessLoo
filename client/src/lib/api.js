@@ -72,4 +72,42 @@ export const api = {
     apiFetch('/chat', token, { method: 'POST', body: JSON.stringify({ question }) }),
 
   getPredictionsToday: (token) => apiFetch('/predict/today', token),
+
+  // ── Conversations ──────────────────────────────────────────────────────────
+  getConversations: (token) => apiFetch('/conversations', token),
+
+  createConversation: (token, body) =>
+    apiFetch('/conversations', token, { method: 'POST', body: JSON.stringify(body) }),
+
+  getConversation: (token, id) => apiFetch(`/conversations/${encodeURIComponent(id)}`, token),
+
+  deleteConversation: (token, id) =>
+    apiFetch(`/conversations/${encodeURIComponent(id)}`, token, { method: 'DELETE' }),
+
+  getMessages: (token, conversationId) =>
+    apiFetch(`/conversations/${encodeURIComponent(conversationId)}/messages`, token),
+
+  sendMessage: (token, conversationId, question) =>
+    apiFetch(`/conversations/${encodeURIComponent(conversationId)}/messages`, token, {
+      method: 'POST',
+      body: JSON.stringify({ question }),
+    }),
+
+  // ── Preferences ───────────────────────────────────────────────────────────
+  getPreferences: (token) => apiFetch('/preferences', token),
+
+  upsertPreferences: (token, body) =>
+    apiFetch('/preferences', token, { method: 'POST', body: JSON.stringify(body) }),
+
+  likeDish: (token, dishName) =>
+    apiFetch('/preferences/like', token, { method: 'POST', body: JSON.stringify({ dish_name: dishName }) }),
+
+  dislikeDish: (token, dishName) =>
+    apiFetch('/preferences/dislike', token, { method: 'POST', body: JSON.stringify({ dish_name: dishName }) }),
+
+  // ── Feedback ──────────────────────────────────────────────────────────────
+  getFeedback: (token) => apiFetch('/feedback', token),
+
+  submitFeedback: (token, body) =>
+    apiFetch('/feedback', token, { method: 'POST', body: JSON.stringify(body) }),
 }
