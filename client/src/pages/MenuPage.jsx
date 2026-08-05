@@ -38,9 +38,19 @@ const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 function SkeletonCard() {
   return (
     <div
-      className="rounded-2xl p-4 animate-pulse"
-      style={{ background: '#F5EDE4', border: '1px solid #F0E6D3', minHeight: 100 }}
-    />
+      className="rounded-2xl animate-pulse overflow-hidden"
+      style={{ border: '1px solid #F0E6D3' }}
+    >
+      <div style={{ height: 120, background: '#F0E6D3' }} />
+      <div className="p-4">
+        <div className="flex flex-wrap gap-2 mb-3">
+          {[80, 60, 100, 70].map((w, i) => (
+            <div key={i} className="h-6 rounded-full" style={{ width: w, background: '#F5EDE4' }} />
+          ))}
+        </div>
+        <div className="h-10 rounded-2xl" style={{ background: '#F5EDE4' }} />
+      </div>
+    </div>
   )
 }
 
@@ -121,6 +131,11 @@ export default function MenuPage() {
     return res?.data
   }
 
+  const handleSubmitFeedback = async (body) => {
+    const token = await getToken()
+    await api.submitFeedback(token, body)
+  }
+
   const formattedSelected = useMemo(
     () => new Date(`${selectedDate}T00:00:00`).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
     [selectedDate]
@@ -199,27 +214,24 @@ export default function MenuPage() {
           </div>
         )}
 
-        {/* Meal cards */}
-        {loading || profileLoading ? (
-          <div className="grid grid-cols-2 gap-3">
-            {MEAL_ORDER.map((m) => <SkeletonCard key={m} />)}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {MEAL_ORDER.map((mealType) => {
-              const menuItem = menuByMeal[mealType]
-              return (
-                <MealCard
-                  key={mealType}
-                  mealType={mealType}
-                  menuItem={menuItem}
-                  attendance={menuItem ? attendanceMap[menuItem.id] : null}
-                  onMarkAttendance={handleMarkAttendance}
-                />
-              )
-            })}
-          </div>
-        )}
+        {/* Meal cards — vertical scrollable list */}
+        <div className="flex flex-col gap-4">
+          {loading || profileLoading
+            ? MEAL_ORDER.map((m) => <SkeletonCard key={m} />)
+            : MEAL_ORDER.map((mealType) => {
+                const menuItem = menuByMeal[mealType]
+                return (
+                  <MealCard
+                    key={mealType}
+                    mealType={mealType}
+                    menuItem={menuItem}
+                    attendance={menuItem ? attendanceMap[menuItem.id] : null}
+                    onMarkAttendance={handleMarkAttendance}
+                    onSubmitFeedback={handleSubmitFeedback}
+                  />
+                )
+              })}
+        </div>
 
         {/* No menu empty state */}
         {!loading && !profileLoading && menus.length === 0 && !error && (

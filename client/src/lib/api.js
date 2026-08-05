@@ -110,4 +110,7 @@ export const api = {
 
   submitFeedback: (token, body) =>
     apiFetch('/feedback', token, { method: 'POST', body: JSON.stringify(body) }),
+
+  updateFeedbackStatus: (token, id, status) =>
+    apiFetch(`/feedback/${encodeURIComponent(id)}`, token, { method: 'PATCH', body: JSON.stringify({ status }) }),
 }

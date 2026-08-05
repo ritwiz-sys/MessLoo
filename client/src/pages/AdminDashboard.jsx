@@ -5,6 +5,171 @@ import { useUserContext } from '../context/UserContext'
 import TopBar from '../components/TopBar'
 import PredictionsSection from '../components/PredictionsSection'
 
+// ── Feedback status config ────────────────────────────────────────────────────
+const STATUS_CONFIG = {
+  open:         { label: 'Open',         color: '#E23744', bg: '#FFF0F1', next: 'acknowledged' },
+  acknowledged: { label: 'Acknowledged', color: '#FFB830', bg: '#FFFBF0', next: 'resolved' },
+  resolved:     { label: 'Resolved',     color: '#2ECC71', bg: '#E8FAF0', next: null },
+}
+const SEVERITY_CONFIG = {
+  high:   { label: '🔴 High',   color: '#E23744' },
+  medium: { label: '🟡 Medium', color: '#FFB830' },
+  low:    { label: '🟢 Low',    color: '#2ECC71' },
+}
+
+// ── Feedback section ──────────────────────────────────────────────────────────
+function FeedbackSection({ getToken }) {
+  const [items, setItems]         = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [error, setError]         = useState(null)
+  const [filter, setFilter]       = useState('open')
+  const [updating, setUpdating]   = useState(null)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const token = await getToken()
+      const res = await api.getFeedback(token)
+      setItems(res?.data || [])
+    } catch (err) {
+      setError(err.message || 'Failed to load feedback')
+    } finally {
+      setLoading(false)
+    }
+  }, [getToken])
+
+  useEffect(() => { load() }, [load])
+
+  const handleStatusUpdate = async (id, newStatus) => {
+    setUpdating(id)
+    try {
+      const token = await getToken()
+      const res = await api.updateFeedbackStatus(token, id, newStatus)
+      setItems((prev) => prev.map((f) => f.id === id ? (res?.data || { ...f, status: newStatus }) : f))
+    } catch { /* ignore */ } finally {
+      setUpdating(null)
+    }
+  }
+
+  const filtered = filter === 'all' ? items : items.filter((f) => f.status === filter)
+  const openCount = items.filter((f) => f.status === 'open').length
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-semibold text-gray-100">Student Feedback</h1>
+          {openCount > 0 && (
+            <span
+              className="text-xs font-bold px-2.5 py-1 rounded-full"
+              style={{ background: '#E23744', color: '#fff' }}
+            >
+              {openCount} new
+            </span>
+          )}
+        </div>
+        <div className="flex gap-2">
+          {['open', 'acknowledged', 'resolved', 'all'].map((s) => (
+            <button
+              key={s}
+              onClick={() => setFilter(s)}
+              className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors capitalize"
+              style={{
+                background: filter === s ? '#7c3aed' : '#1f1f29',
+                color: filter === s ? '#fff' : '#9ca3af',
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}
+            >
+              {s}
+            </button>
+          ))}
+          <button
+            onClick={load}
+            className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
+            style={{ background: '#1f1f29', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            ↻
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-400/30 bg-red-500/10 text-red-300 text-sm p-4 mb-4">
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex flex-col gap-3">
+          {[1,2,3].map((i) => (
+            <div key={i} className="h-20 rounded-2xl animate-pulse" style={{ background: '#15151c', border: '1px solid rgba(255,255,255,0.06)' }} />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-2xl p-10 text-center" style={{ background: '#15151c', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <p className="text-gray-500 text-sm">No {filter === 'all' ? '' : filter} feedback yet.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {filtered.map((fb) => {
+            const status = STATUS_CONFIG[fb.status] || STATUS_CONFIG.open
+            const sev = SEVERITY_CONFIG[fb.severity] || SEVERITY_CONFIG.medium
+            const date = fb.created_at
+              ? new Date(fb.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+              : ''
+            return (
+              <div
+                key={fb.id}
+                className="rounded-2xl p-4"
+                style={{ background: '#15151c', border: '1px solid rgba(255,255,255,0.07)' }}
+              >
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    {/* Category + meal */}
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-xs font-bold uppercase tracking-wide" style={{ color: '#7c3aed' }}>
+                        {fb.category?.replace('_', ' ') || 'feedback'}
+                      </span>
+                      <span className="text-gray-600">·</span>
+                      <span className="text-xs text-gray-400 capitalize">{fb.meal_type} · {fb.meal_date}</span>
+                      <span className="text-gray-600">·</span>
+                      <span className="text-xs font-semibold" style={{ color: sev.color }}>{sev.label}</span>
+                    </div>
+                    {/* Description */}
+                    <p className="text-sm text-gray-200 leading-relaxed">{fb.description}</p>
+                    <p className="text-xs mt-1.5" style={{ color: '#6b7280' }}>{date}</p>
+                  </div>
+
+                  {/* Status badge + action */}
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <span
+                      className="text-xs font-bold px-2.5 py-1 rounded-full"
+                      style={{ background: status.bg, color: status.color }}
+                    >
+                      {status.label}
+                    </span>
+                    {status.next && (
+                      <button
+                        onClick={() => handleStatusUpdate(fb.id, status.next)}
+                        disabled={updating === fb.id}
+                        className="text-xs px-3 py-1 rounded-lg font-medium disabled:opacity-40 transition-colors"
+                        style={{ background: '#1f1f29', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.1)' }}
+                      >
+                        {updating === fb.id ? '…' : `Mark ${status.next}`}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </section>
+  )
+}
+
 const MEAL_TYPES = ['breakfast', 'lunch', 'snacks', 'dinner']
 
 function todayISO() {
@@ -263,6 +428,8 @@ export default function AdminDashboard() {
 
       <main className="max-w-5xl mx-auto px-4 sm:px-8 py-8 flex flex-col gap-10">
         <PredictionsSection />
+
+        <FeedbackSection getToken={getToken} />
 
         <section>
           <h1 className="text-xl font-semibold text-gray-100 mb-1">Manage Blocks</h1>
