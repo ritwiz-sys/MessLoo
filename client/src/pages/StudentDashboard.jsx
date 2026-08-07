@@ -7,13 +7,26 @@ import MealCard from '../components/MealCard'
 import BottomTabBar from '../components/BottomTabBar'
 
 const MEAL_ORDER = ['breakfast', 'lunch', 'snacks', 'dinner']
-const MEAL_EMOJI = { breakfast: '☀️', lunch: '🍛', snacks: '🫖', dinner: '🌙' }
+
 const MEAL_TIMES = {
   breakfast: '7:30 – 9:00 AM',
   lunch: '12:00 – 2:00 PM',
   snacks: '4:00 – 5:30 PM',
   dinner: '7:00 – 9:30 PM',
 }
+
+const MEAL_ACCENT = {
+  breakfast: '#F59E0B',
+  lunch: '#E23744',
+  snacks: '#D97706',
+  dinner: '#7C3AED',
+}
+
+const MENU_TYPES = [
+  { key: 'veg',     label: 'Veg Mess',     color: '#16a34a', bg: 'rgba(22,163,74,0.1)',   border: 'rgba(22,163,74,0.3)'   },
+  { key: 'non_veg', label: 'Non-Veg Mess', color: '#E23744', bg: 'rgba(226,55,68,0.1)',   border: 'rgba(226,55,68,0.3)'   },
+  { key: 'special', label: 'Special Mess', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)' },
+]
 
 function todayISO() {
   const now = new Date()
@@ -43,15 +56,10 @@ function popPendingFeedback() {
   try {
     const stored = JSON.parse(localStorage.getItem('messloo_pending_feedback') || '[]')
     const now = Date.now()
-    const MIN_WAIT = 45 * 60 * 1000   // 45 min — meal should be over
-    const MAX_AGE  = 18 * 60 * 60 * 1000 // 18 hr — not too stale
-
-    const due = stored.filter(
-      (e) => now - e.markedAt >= MIN_WAIT && now - e.markedAt <= MAX_AGE
-    )
+    const MIN_WAIT = 45 * 60 * 1000
+    const MAX_AGE  = 18 * 60 * 60 * 1000
+    const due = stored.filter((e) => now - e.markedAt >= MIN_WAIT && now - e.markedAt <= MAX_AGE)
     if (due.length === 0) return null
-
-    // Return the oldest due entry and remove it from storage
     const entry = due[0]
     const remaining = stored.filter((e) => e.menuId !== entry.menuId)
     localStorage.setItem('messloo_pending_feedback', JSON.stringify(remaining))
@@ -63,52 +71,42 @@ function popPendingFeedback() {
 function FeedbackModal({ entry, onClose, onSubmit }) {
   const [stars, setStars] = useState(0)
   const [submitting, setSubmitting] = useState(false)
+  const STAR_LABELS = ['', 'Poor', 'Below average', 'Decent', 'Good', 'Excellent!']
 
   const handleSubmit = async () => {
     if (stars === 0) { onClose(); return }
     setSubmitting(true)
-    try {
-      await onSubmit(entry, stars)
-    } finally {
-      onClose()
-    }
+    try { await onSubmit(entry, stars) } finally { onClose() }
   }
-
-  const STAR_LABELS = ['', 'Poor', 'Below average', 'Decent', 'Good', 'Excellent!']
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: 'rgba(28,28,30,0.55)' }}
+      style={{ background: 'rgba(20,14,8,0.5)', backdropFilter: 'blur(4px)' }}
     >
       <div
-        className="w-full max-w-lg rounded-t-3xl px-6 pt-6 pb-10"
-        style={{ background: '#FFFFFF', border: '1px solid #F0E6D3' }}
+        className="w-full max-w-lg rounded-t-3xl px-6 pt-4 pb-10"
+        style={{
+          background: 'rgba(255,252,246,0.97)',
+          backdropFilter: 'blur(20px)',
+          borderTop: '1px solid rgba(245,158,11,0.2)',
+        }}
       >
-        {/* Pill handle */}
-        <div className="mx-auto w-10 h-1.5 rounded-full mb-5" style={{ background: '#F0E6D3' }} />
-
+        <div className="mx-auto w-10 h-1 rounded-full mb-5" style={{ background: '#F0E6D3' }} />
         <div className="text-center mb-5">
-          <span className="text-5xl block mb-3">{MEAL_EMOJI[entry.mealType] || '🍽️'}</span>
           <h2 className="text-lg font-extrabold" style={{ color: '#1C1C1E' }}>
             How was {entry.mealLabel}?
           </h2>
-          <p className="text-sm mt-1" style={{ color: '#6B6B6B' }}>
-            Rate the meal you just had
-          </p>
+          <p className="text-sm mt-1" style={{ color: '#8B7355' }}>Rate the meal you just had</p>
         </div>
-
-        {/* Star rating */}
         <div className="flex justify-center gap-3 mb-2">
-          {[1, 2, 3, 4, 5].map((s) => (
+          {[1,2,3,4,5].map((s) => (
             <button
               key={s}
               onClick={() => setStars(s)}
               className="transition-transform active:scale-95"
-              style={{ fontSize: 40, lineHeight: 1, color: s <= stars ? '#FFB830' : '#E8DDD0' }}
-            >
-              ★
-            </button>
+              style={{ fontSize: 40, lineHeight: 1, color: s <= stars ? '#F59E0B' : '#E8DDD0' }}
+            >★</button>
           ))}
         </div>
         {stars > 0 && (
@@ -116,12 +114,11 @@ function FeedbackModal({ entry, onClose, onSubmit }) {
             {STAR_LABELS[stars]}
           </p>
         )}
-
         <div className="flex gap-3 mt-4">
           <button
             onClick={onClose}
             className="flex-1 rounded-2xl py-3 text-sm font-semibold"
-            style={{ background: '#F5EDE4', color: '#6B6B6B' }}
+            style={{ background: '#F5EDE4', color: '#8B7355' }}
           >
             Skip
           </button>
@@ -129,7 +126,11 @@ function FeedbackModal({ entry, onClose, onSubmit }) {
             onClick={handleSubmit}
             disabled={submitting}
             className="flex-1 rounded-2xl py-3 text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
-            style={{ background: '#E23744', color: '#FFFFFF', boxShadow: '0 4px 14px rgba(226,55,68,0.3)' }}
+            style={{
+              background: 'linear-gradient(135deg, #E23744, #C0392B)',
+              color: '#FFFFFF',
+              boxShadow: '0 4px 14px rgba(226,55,68,0.3)',
+            }}
           >
             {submitting ? 'Submitting…' : stars === 0 ? 'Skip' : 'Submit'}
           </button>
@@ -143,17 +144,21 @@ function FeedbackModal({ entry, onClose, onSubmit }) {
 function SkeletonCard() {
   return (
     <div
-      className="rounded-2xl animate-pulse overflow-hidden"
-      style={{ border: '1px solid #F0E6D3' }}
+      className="rounded-2xl overflow-hidden animate-pulse"
+      style={{
+        background: 'rgba(255,255,255,0.6)',
+        border: '1px solid rgba(255,255,255,0.9)',
+        boxShadow: '0 2px 12px rgba(180,120,40,0.06)',
+      }}
     >
-      <div style={{ height: 120, background: '#F0E6D3' }} />
+      <div style={{ height: 64, background: 'rgba(240,230,211,0.5)' }} />
       <div className="p-4">
-        <div className="flex flex-wrap gap-2 mb-3">
-          {[80, 60, 100, 70].map((w, i) => (
-            <div key={i} className="h-6 rounded-full" style={{ width: w, background: '#F5EDE4' }} />
+        <div className="flex flex-col gap-2 mb-4">
+          {[100, 140, 80].map((w, i) => (
+            <div key={i} className="h-5 rounded-lg" style={{ width: w, background: 'rgba(240,230,211,0.7)' }} />
           ))}
         </div>
-        <div className="h-10 rounded-2xl" style={{ background: '#F5EDE4' }} />
+        <div className="h-10 rounded-xl" style={{ background: 'rgba(240,230,211,0.5)' }} />
       </div>
     </div>
   )
@@ -168,10 +173,17 @@ export default function StudentDashboard() {
   const [attendanceMap, setAttendanceMap] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [pendingFeedback, setPendingFeedback] = useState(null)
+  const [menuType, setMenuType] = useState('veg')
 
   const date = useMemo(() => todayISO(), [])
   const nextMeal = getNextMeal()
 
+  // Check for pending post-meal feedback on mount
+  useEffect(() => {
+    const entry = popPendingFeedback()
+    if (entry) setPendingFeedback(entry)
+  }, [])
 
   const fetchAttendance = useCallback(async (menuItems, token) => {
     const records = {}
@@ -197,7 +209,7 @@ export default function StudentDashboard() {
       setError(null)
       try {
         const token = await getToken()
-        const res = await api.getMenus(token, { date, block_category: blockCategory })
+        const res = await api.getMenus(token, { date, block_category: blockCategory, menu_type: menuType })
         const menuItems = res?.data || []
         if (cancelled) return
         setMenus(menuItems)
@@ -213,7 +225,7 @@ export default function StudentDashboard() {
     }
     load()
     return () => { cancelled = true }
-  }, [getToken, date, blockCategory, profileLoading, fetchAttendance])
+  }, [getToken, date, blockCategory, menuType, profileLoading, fetchAttendance])
 
   const menuByMeal = useMemo(() => {
     const map = {}
@@ -233,6 +245,18 @@ export default function StudentDashboard() {
     await api.submitFeedback(token, body)
   }
 
+  const handlePostMealFeedback = async (entry, stars) => {
+    const token = await getToken()
+    await api.submitFeedback(token, {
+      menu_id: entry.menuId,
+      meal_date: entry.mealDate,
+      meal_type: entry.mealType,
+      category: 'food_quality',
+      description: `Rated ${stars}/5 stars`,
+      severity: stars <= 2 ? 'high' : stars === 3 ? 'medium' : 'low',
+    }).catch(() => {})
+  }
+
   const formattedDate = useMemo(
     () => new Date(`${date}T00:00:00`).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }),
     [date]
@@ -241,80 +265,121 @@ export default function StudentDashboard() {
   const firstName = profile?.name?.split(' ')[0] || null
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#FFF8F0' }}>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{
+        background: 'linear-gradient(160deg, #FFF8EE 0%, #FEF3C7 35%, #FFECD2 70%, #FFF8EE 100%)',
+      }}
+    >
+      {/* ── Pending feedback modal ── */}
+      {pendingFeedback && (
+        <FeedbackModal
+          entry={pendingFeedback}
+          onClose={() => setPendingFeedback(null)}
+          onSubmit={handlePostMealFeedback}
+        />
+      )}
+
       {/* ── Header ── */}
-      <header
-        className="px-4 pt-10 pb-4"
-        style={{ background: 'linear-gradient(160deg, #FFF8F0 0%, #FFEEE8 100%)' }}
-      >
-        <div className="max-w-lg mx-auto flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium" style={{ color: '#6B6B6B' }}>{getGreeting()} 👋</p>
-            <h1 className="text-2xl font-extrabold mt-0.5" style={{ color: '#1C1C1E' }}>
-              {firstName ?? 'MessLoo'}
-            </h1>
-            {blockName && (
-              <div
-                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-xs font-semibold"
-                style={{ background: '#FFE8EA', color: '#E23744' }}
-              >
-                🏠 {blockName}{cateringCompany ? ` · ${cateringCompany}` : ''}
-              </div>
-            )}
-          </div>
-          <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-10 h-10' } }} />
-        </div>
-
-        <div className="max-w-lg mx-auto mt-2">
-          <p className="text-xs font-medium" style={{ color: '#6B6B6B' }}>{formattedDate}</p>
-        </div>
-
-        {/* Next meal banner */}
-        {nextMeal && (
-          <div
-            className="max-w-lg mx-auto mt-3 flex items-center justify-between rounded-2xl px-4 py-3"
-            style={{ background: '#E23744', boxShadow: '0 4px 16px rgba(226,55,68,0.25)' }}
-          >
+      <header className="px-5 pt-12 pb-5">
+        <div className="max-w-lg mx-auto">
+          {/* Top row */}
+          <div className="flex items-start justify-between mb-4">
             <div>
-              <p className="text-[11px] font-semibold" style={{ color: 'rgba(255,255,255,0.7)' }}>Coming up next</p>
-              <p className="text-base font-extrabold text-white capitalize mt-0.5">
-                {MEAL_EMOJI[nextMeal]} {nextMeal.charAt(0).toUpperCase() + nextMeal.slice(1)}
+              <p className="text-xs font-semibold tracking-widest uppercase mb-1" style={{ color: '#B08040' }}>
+                {getGreeting()}
               </p>
+              <h1 className="text-3xl font-black tracking-tight" style={{ color: '#1C1C1E' }}>
+                {firstName ?? 'MessLoo'}
+              </h1>
+              <p className="text-xs font-medium mt-1" style={{ color: '#8B7355' }}>{formattedDate}</p>
             </div>
-            <div className="text-right">
-              <p className="text-xs font-medium text-white">{MEAL_TIMES[nextMeal]}</p>
-              <button
-                onClick={() => navigate('/menu')}
-                className="text-xs font-bold mt-1 underline underline-offset-2"
-                style={{ color: 'rgba(255,255,255,0.85)' }}
-              >
-                See full menu
-              </button>
-            </div>
+            <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-10 h-10' } }} />
           </div>
-        )}
+
+          {/* Block badge */}
+          {blockName && (
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-4"
+              style={{
+                background: 'rgba(245,158,11,0.12)',
+                color: '#92610A',
+                border: '1px solid rgba(245,158,11,0.25)',
+              }}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: '#F59E0B' }}
+              />
+              {blockName}{cateringCompany ? ` · ${cateringCompany}` : ''}
+            </div>
+          )}
+
+          {/* Next meal pill */}
+          {nextMeal && (
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-1"
+              style={{
+                background: `${MEAL_ACCENT[nextMeal]}14`,
+                color: MEAL_ACCENT[nextMeal],
+                border: `1px solid ${MEAL_ACCENT[nextMeal]}30`,
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: MEAL_ACCENT[nextMeal] }} />
+              Next: {nextMeal.charAt(0).toUpperCase() + nextMeal.slice(1)} · {MEAL_TIMES[nextMeal]}
+            </div>
+          )}
+        </div>
       </header>
 
       {/* ── Meal list ── */}
-      <main className="flex-1 px-4 pt-4 pb-28 max-w-lg mx-auto w-full">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-bold" style={{ color: '#1C1C1E' }}>Today's Menu</h2>
-          <button onClick={() => navigate('/menu')} className="text-xs font-semibold" style={{ color: '#E23744' }}>
-            Browse week →
-          </button>
+      <main className="flex-1 px-5 pt-2 pb-28 max-w-lg mx-auto w-full">
+        {/* Section header */}
+        <div className="mb-4">
+          <h2 className="text-base font-extrabold mb-3" style={{ color: '#1C1C1E' }}>Today's Menu</h2>
+
+          {/* ── Menu type toggle ── */}
+          <div
+            className="flex rounded-2xl p-1 gap-1"
+            style={{
+              background: 'rgba(255,255,255,0.6)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255,255,255,0.9)',
+            }}
+          >
+            {MENU_TYPES.map(({ key, label, color, bg, border }) => {
+              const active = menuType === key
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setMenuType(key)}
+                  className="flex-1 rounded-xl py-2 text-[11px] font-bold transition-all active:scale-95"
+                  style={
+                    active
+                      ? { background: bg, color, border: `1px solid ${border}`, boxShadow: `0 2px 8px ${color}20` }
+                      : { background: 'transparent', color: '#8B7355', border: '1px solid transparent' }
+                  }
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {(profileError || error) && (
           <div
             className="rounded-2xl p-3 mb-4 text-sm font-medium"
-            style={{ background: '#FFF0F1', color: '#E23744', border: '1px solid #FCCFD2' }}
+            style={{ background: 'rgba(226,55,68,0.08)', color: '#E23744', border: '1px solid rgba(226,55,68,0.2)' }}
           >
             {profileError || error}
           </div>
         )}
 
-        {/* Vertical meal list */}
-        <div className="flex flex-col gap-4">
+        {/* Cards */}
+        <div className="flex flex-col gap-3.5">
           {profileLoading || loading
             ? MEAL_ORDER.map((m) => <SkeletonCard key={m} />)
             : MEAL_ORDER.map((mealType) => {
@@ -335,20 +400,26 @@ export default function StudentDashboard() {
         {/* Chat CTA */}
         <button
           onClick={() => navigate('/chat')}
-          className="w-full mt-5 flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left transition-all active:scale-95"
-          style={{ background: '#FFFFFF', border: '1px solid #F0E6D3', boxShadow: '0 2px 12px rgba(226,55,68,0.07)' }}
+          className="w-full mt-5 flex items-center gap-3 rounded-2xl px-4 py-4 text-left transition-all active:scale-[0.98]"
+          style={{
+            background: 'rgba(255,255,255,0.7)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.9)',
+            boxShadow: '0 2px 16px rgba(180,120,40,0.08)',
+          }}
         >
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
-            style={{ background: '#FFE8EA' }}
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold"
+            style={{ background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)', color: '#92610A' }}
           >
-            💬
+            AI
           </div>
           <div>
-            <p className="text-sm font-bold" style={{ color: '#1C1C1E' }}>Ask the Mess AI</p>
-            <p className="text-xs" style={{ color: '#6B6B6B' }}>What's for dinner? Any specials?</p>
+            <p className="text-sm font-bold" style={{ color: '#1C1C1E' }}>Ask Mess AI</p>
+            <p className="text-xs" style={{ color: '#8B7355' }}>What's for dinner? Any specials today?</p>
           </div>
-          <span className="ml-auto text-xl" style={{ color: '#F0E6D3' }}>›</span>
+          <span className="ml-auto text-lg font-light" style={{ color: '#C8B89A' }}>›</span>
         </button>
       </main>
 

@@ -4,7 +4,6 @@ import { UserProvider, useUserContext } from './context/UserContext'
 import LoginPage from './pages/LoginPage'
 import OnboardingPage from './pages/OnboardingPage'
 import StudentDashboard from './pages/StudentDashboard'
-import MenuPage from './pages/MenuPage'
 import ChatPage from './pages/ChatPage'
 import ProfilePage from './pages/ProfilePage'
 import AdminDashboard from './pages/AdminDashboard'
@@ -96,7 +95,6 @@ function AppRoutes() {
 
       {/* ── Student tab pages ── */}
       <Route path="/dashboard" element={<StudentPage><StudentDashboard /></StudentPage>} />
-      <Route path="/menu"      element={<StudentPage><MenuPage /></StudentPage>} />
       <Route path="/chat"      element={<StudentPage><ChatPage /></StudentPage>} />
       <Route path="/profile"   element={<StudentPage><ProfilePage /></StudentPage>} />
 

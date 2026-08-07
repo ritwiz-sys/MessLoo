@@ -15,22 +15,6 @@ function HomeIcon({ active }) {
   )
 }
 
-function MenuIcon({ active }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect
-        x="3" y="4" width="18" height="18" rx="3"
-        stroke={active ? '#E23744' : '#6B6B6B'}
-        strokeWidth="1.8"
-        fill={active ? '#FFE8EA' : 'none'}
-      />
-      <path d="M8 2V6M16 2V6" stroke={active ? '#E23744' : '#6B6B6B'} strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M3 10H21" stroke={active ? '#E23744' : '#6B6B6B'} strokeWidth="1.8" />
-      <path d="M8 14H10M14 14H16M8 17.5H10M14 17.5H16" stroke={active ? '#E23744' : '#6B6B6B'} strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  )
-}
-
 function ChatIcon({ active }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -67,10 +51,9 @@ function ProfileIcon({ active }) {
 }
 
 const TABS = [
-  { path: '/dashboard', label: 'Home', Icon: HomeIcon },
-  { path: '/menu', label: 'Menu', Icon: MenuIcon },
-  { path: '/chat', label: 'Chat', Icon: ChatIcon },
-  { path: '/profile', label: 'Profile', Icon: ProfileIcon },
+  { path: '/dashboard', label: 'Home',    Icon: HomeIcon },
+  { path: '/chat',      label: 'Chat',    Icon: ChatIcon },
+  { path: '/profile',   label: 'Profile', Icon: ProfileIcon },
 ]
 
 export default function BottomTabBar() {
@@ -83,8 +66,14 @@ export default function BottomTabBar() {
       style={{ backgroundColor: 'transparent' }}
     >
       <nav
-        className="w-full max-w-lg bg-white border-t border-[#F0E6D3]"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        className="w-full max-w-lg"
+        style={{
+          background: 'rgba(255,252,246,0.92)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderTop: '1px solid rgba(240,230,211,0.6)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
       >
         <div className="flex items-center">
           {TABS.map(({ path, label, Icon }) => {
