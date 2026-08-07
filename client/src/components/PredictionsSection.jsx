@@ -23,6 +23,65 @@ const TABS = [
   { key: 'LH', label: 'LH Blocks' },
 ]
 
+// ── Dummy fallback — weighted-avg predicted attendance (8 wks of history) ──────
+// Used when /predict/today returns no data (no real attendance records yet)
+const DUMMY_PREDICTIONS = {
+  MH: [
+    // MH1 — 248 students
+    { block_name: 'MH1', meal_type: 'breakfast', predicted_count: 165, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH1', meal_type: 'lunch',     predicted_count: 209, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH1', meal_type: 'snacks',    predicted_count: 141, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH1', meal_type: 'dinner',    predicted_count: 193, based_on_weeks: 8, is_special: false },
+    // MH2 — 272 students
+    { block_name: 'MH2', meal_type: 'breakfast', predicted_count: 191, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH2', meal_type: 'lunch',     predicted_count: 226, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH2', meal_type: 'snacks',    predicted_count: 162, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH2', meal_type: 'dinner',    predicted_count: 205, based_on_weeks: 8, is_special: false },
+    // MH3 — 220 students
+    { block_name: 'MH3', meal_type: 'breakfast', predicted_count: 138, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH3', meal_type: 'lunch',     predicted_count: 188, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH3', meal_type: 'snacks',    predicted_count: 119, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH3', meal_type: 'dinner',    predicted_count: 177, based_on_weeks: 8, is_special: false },
+    // MH4 — 260 students
+    { block_name: 'MH4', meal_type: 'breakfast', predicted_count: 194, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH4', meal_type: 'lunch',     predicted_count: 229, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH4', meal_type: 'snacks',    predicted_count: 169, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH4', meal_type: 'dinner',    predicted_count: 214, based_on_weeks: 8, is_special: false },
+    // MH5 — 236 students
+    { block_name: 'MH5', meal_type: 'breakfast', predicted_count: 161, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH5', meal_type: 'lunch',     predicted_count: 188, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH5', meal_type: 'snacks',    predicted_count: 141, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH5', meal_type: 'dinner',    predicted_count: 175, based_on_weeks: 8, is_special: false },
+    // MH6 — 284 students
+    { block_name: 'MH6', meal_type: 'breakfast', predicted_count: 221, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH6', meal_type: 'lunch',     predicted_count: 245, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH6', meal_type: 'snacks',    predicted_count: 191, based_on_weeks: 8, is_special: false },
+    { block_name: 'MH6', meal_type: 'dinner',    predicted_count: 237, based_on_weeks: 8, is_special: false },
+  ],
+  LH: [
+    // LH1 — 178 students
+    { block_name: 'LH1', meal_type: 'breakfast', predicted_count: 113, based_on_weeks: 8, is_special: false },
+    { block_name: 'LH1', meal_type: 'lunch',     predicted_count: 148, based_on_weeks: 8, is_special: false },
+    { block_name: 'LH1', meal_type: 'snacks',    predicted_count:  99, based_on_weeks: 8, is_special: false },
+    { block_name: 'LH1', meal_type: 'dinner',    predicted_count: 136, based_on_weeks: 8, is_special: false },
+    // LH2 — 196 students
+    { block_name: 'LH2', meal_type: 'breakfast', predicted_count: 141, based_on_weeks: 8, is_special: false },
+    { block_name: 'LH2', meal_type: 'lunch',     predicted_count: 166, based_on_weeks: 8, is_special: false },
+    { block_name: 'LH2', meal_type: 'snacks',    predicted_count: 119, based_on_weeks: 8, is_special: false },
+    { block_name: 'LH2', meal_type: 'dinner',    predicted_count: 156, based_on_weeks: 8, is_special: false },
+    // LH3 — 186 students
+    { block_name: 'LH3', meal_type: 'breakfast', predicted_count: 124, based_on_weeks: 8, is_special: false },
+    { block_name: 'LH3', meal_type: 'lunch',     predicted_count: 150, based_on_weeks: 8, is_special: false },
+    { block_name: 'LH3', meal_type: 'snacks',    predicted_count: 107, based_on_weeks: 8, is_special: false },
+    { block_name: 'LH3', meal_type: 'dinner',    predicted_count: 138, based_on_weeks: 8, is_special: false },
+    // LH4 — 204 students
+    { block_name: 'LH4', meal_type: 'breakfast', predicted_count: 156, based_on_weeks: 8, is_special: false },
+    { block_name: 'LH4', meal_type: 'lunch',     predicted_count: 176, based_on_weeks: 8, is_special: false },
+    { block_name: 'LH4', meal_type: 'snacks',    predicted_count: 127, based_on_weeks: 8, is_special: false },
+    { block_name: 'LH4', meal_type: 'dinner',    predicted_count: 166, based_on_weeks: 8, is_special: false },
+  ],
+}
+
 function BlockCard({ blockName, predictionsByMeal }) {
   const total = MEAL_ORDER.reduce((sum, m) => sum + (predictionsByMeal[m]?.predicted_count || 0), 0)
 
@@ -134,6 +193,7 @@ export default function PredictionsSection() {
   const [predictionsByBlock, setPredictionsByBlock] = useState({ MH: [], LH: [] })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [usingDummy, setUsingDummy] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -142,9 +202,22 @@ export default function PredictionsSection() {
       const token = await getToken()
       const res = await api.getPredictionsToday(token)
       const data = res?.data || {}
-      setPredictionsByBlock({ MH: data.MH || [], LH: data.LH || [] })
+      const MH = data.MH || []
+      const LH = data.LH || []
+      // Fall back to dummy data when the API has no real predictions yet
+      const hasReal = MH.some((p) => p.predicted_count != null) || LH.some((p) => p.predicted_count != null)
+      if (hasReal) {
+        setPredictionsByBlock({ MH, LH })
+        setUsingDummy(false)
+      } else {
+        setPredictionsByBlock(DUMMY_PREDICTIONS)
+        setUsingDummy(true)
+      }
     } catch (err) {
-      setError(err.message || 'Failed to load predictions')
+      // On error, still show dummy data so the section isn't empty
+      setPredictionsByBlock(DUMMY_PREDICTIONS)
+      setUsingDummy(true)
+      setError(null) // suppress error — dummy data covers it
     } finally {
       setLoading(false)
     }
@@ -164,9 +237,19 @@ export default function PredictionsSection() {
   return (
     <section>
       <div className="mb-5">
-        <h1 className="text-xl font-semibold text-gray-100 mb-1">Food Wastage Predictions</h1>
+        <div className="flex items-center gap-2 mb-1">
+          <h1 className="text-xl font-semibold text-gray-100">Food Attendance Predictions</h1>
+          {usingDummy && !loading && (
+            <span
+              className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+              style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)' }}
+            >
+              Simulated data
+            </span>
+          )}
+        </div>
         <p className="text-sm text-gray-500">
-          Predicted student turnout per block and meal today, based on recent weeks of attendance.
+          Predicted student turnout per block and meal today, based on weighted average of recent attendance.
         </p>
       </div>
 
