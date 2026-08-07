@@ -4,6 +4,7 @@ import { api } from '../lib/api'
 import { useUserContext } from '../context/UserContext'
 import TopBar from '../components/TopBar'
 import PredictionsSection from '../components/PredictionsSection'
+import WastagePredictionSection from '../components/WastagePredictionSection'
 
 // ── Feedback status config ────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -428,6 +429,8 @@ export default function AdminDashboard() {
 
       <main className="max-w-5xl mx-auto px-4 sm:px-8 py-8 flex flex-col gap-10">
         <PredictionsSection />
+
+        <WastagePredictionSection />
 
         <FeedbackSection getToken={getToken} />
 
