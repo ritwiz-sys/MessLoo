@@ -190,10 +190,11 @@ function BlockGrid({ predictions, loading, error }) {
 export default function PredictionsSection() {
   const { getToken } = useAuth()
   const [activeTab, setActiveTab] = useState('MH')
-  const [predictionsByBlock, setPredictionsByBlock] = useState({ MH: [], LH: [] })
+  // Start with dummy data immediately — API will replace if real records exist
+  const [predictionsByBlock, setPredictionsByBlock] = useState(DUMMY_PREDICTIONS)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [usingDummy, setUsingDummy] = useState(false)
+  const [usingDummy, setUsingDummy] = useState(true)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -202,22 +203,16 @@ export default function PredictionsSection() {
       const token = await getToken()
       const res = await api.getPredictionsToday(token)
       const data = res?.data || {}
-      const MH = data.MH || []
-      const LH = data.LH || []
-      // Fall back to dummy data when the API has no real predictions yet
-      const hasReal = MH.some((p) => p.predicted_count != null) || LH.some((p) => p.predicted_count != null)
-      if (hasReal) {
+      const MH = (data.MH || []).filter((p) => p.predicted_count != null)
+      const LH = (data.LH || []).filter((p) => p.predicted_count != null)
+      if (MH.length > 0 || LH.length > 0) {
+        // Real data available — use it
         setPredictionsByBlock({ MH, LH })
         setUsingDummy(false)
-      } else {
-        setPredictionsByBlock(DUMMY_PREDICTIONS)
-        setUsingDummy(true)
       }
-    } catch (err) {
-      // On error, still show dummy data so the section isn't empty
-      setPredictionsByBlock(DUMMY_PREDICTIONS)
-      setUsingDummy(true)
-      setError(null) // suppress error — dummy data covers it
+      // else: keep DUMMY_PREDICTIONS already in state, usingDummy stays true
+    } catch {
+      // Keep dummy data on error, no error banner needed
     } finally {
       setLoading(false)
     }
