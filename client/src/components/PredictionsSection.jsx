@@ -203,16 +203,21 @@ export default function PredictionsSection() {
       const token = await getToken()
       const res = await api.getPredictionsToday(token)
       const data = res?.data || {}
-      const MH = (data.MH || []).filter((p) => p.predicted_count != null)
-      const LH = (data.LH || []).filter((p) => p.predicted_count != null)
+      // Only keep rows where predicted_count is a real positive number
+      const MH = (data.MH || []).filter((p) => p.predicted_count != null && Number(p.predicted_count) > 0)
+      const LH = (data.LH || []).filter((p) => p.predicted_count != null && Number(p.predicted_count) > 0)
       if (MH.length > 0 || LH.length > 0) {
-        // Real data available — use it
         setPredictionsByBlock({ MH, LH })
         setUsingDummy(false)
+      } else {
+        // No real predictions yet — always explicitly set dummy data
+        setPredictionsByBlock(DUMMY_PREDICTIONS)
+        setUsingDummy(true)
       }
-      // else: keep DUMMY_PREDICTIONS already in state, usingDummy stays true
     } catch {
-      // Keep dummy data on error, no error banner needed
+      // On any error, show dummy data
+      setPredictionsByBlock(DUMMY_PREDICTIONS)
+      setUsingDummy(true)
     } finally {
       setLoading(false)
     }
