@@ -43,10 +43,10 @@ function BlockCard({ blockName, predictionsByMeal }) {
                   <span className="mr-1.5">{MEAL_EMOJI[mealType]}</span>
                   {MEAL_LABELS[mealType]}
                 </td>
-                {p ? (
+                {p && p.predicted_count != null ? (
                   <>
                     <td className="px-4 py-2.5 text-gray-100 font-medium">
-                      {p.predicted_count.toLocaleString()}
+                      {Number(p.predicted_count).toLocaleString()}
                     </td>
                     <td className="px-4 py-2.5">
                       {p.is_special && (
@@ -56,7 +56,7 @@ function BlockCard({ blockName, predictionsByMeal }) {
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-right text-[11px] text-gray-600 whitespace-nowrap">
-                      Based on {p.based_on_weeks} week{p.based_on_weeks === 1 ? '' : 's'}
+                      Based on {p.based_on_weeks ?? '—'} week{p.based_on_weeks === 1 ? '' : 's'}
                     </td>
                   </>
                 ) : (
@@ -72,7 +72,7 @@ function BlockCard({ blockName, predictionsByMeal }) {
           <tr className="border-t border-white/10">
             <td className="px-4 py-2.5 text-gray-400 font-medium">Total</td>
             <td colSpan={3} className="px-4 py-2.5 text-gray-100 font-semibold">
-              {total.toLocaleString()}
+              {(total ?? 0).toLocaleString()}
             </td>
           </tr>
         </tfoot>
