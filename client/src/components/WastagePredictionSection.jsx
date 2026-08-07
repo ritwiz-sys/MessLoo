@@ -116,14 +116,18 @@ const MEAL_EMOJI  = { breakfast: '🌅', lunch: '🍛', snacks: '🍪', dinner: 
 const TABS        = [{ key: 'MH', label: 'MH Blocks' }, { key: 'LH', label: 'LH Blocks' }]
 
 // ── Derive per-meal non-consumption + wastage for one block ───────────────────
+function safe(n, fallback = 0) {
+  return Number.isFinite(n) ? n : fallback
+}
+
 function computeBlock(block) {
   const byMeal = {}
-  for (const [meal, data] of Object.entries(block.meals)) {
-    const avgAte    = weightedAvg(data.ate_history)
-    const skipCount = Math.round(block.total_students - avgAte)
-    const skipPct   = Math.round((skipCount / block.total_students) * 100)
-    const wastageKg = parseFloat(weightedAvg(data.waste_history).toFixed(1))
-    byMeal[meal]    = { skipCount, skipPct, wastageKg, weeks: data.ate_history.length }
+  for (const [meal, data] of Object.entries(block.meals || {})) {
+    const avgAte    = safe(weightedAvg(data.ate_history || []), 0)
+    const skipCount = safe(Math.round(block.total_students - avgAte), 0)
+    const skipPct   = safe(Math.round((skipCount / (block.total_students || 1)) * 100), 0)
+    const wastageKg = safe(parseFloat(weightedAvg(data.waste_history || []).toFixed(1)), 0)
+    byMeal[meal]    = { skipCount, skipPct, wastageKg, weeks: (data.ate_history || []).length }
   }
   return byMeal
 }
@@ -180,7 +184,7 @@ function BlockCard({ block }) {
                   <>
                     {/* Skip count */}
                     <td className="px-3 py-2.5 font-medium text-gray-100 whitespace-nowrap">
-                      {p.skipCount.toLocaleString()} skip
+                      {(p.skipCount ?? 0).toLocaleString()} skip
                     </td>
 
                     {/* Skip % badge */}
@@ -231,12 +235,12 @@ function BlockCard({ block }) {
           <tr className="border-t border-white/10">
             <td className="px-4 py-2.5 text-gray-400 font-medium">Total</td>
             <td className="px-3 py-2.5 text-gray-100 font-semibold">
-              {totalSkip.toLocaleString()} skip
+              {(totalSkip ?? 0).toLocaleString()} skip
             </td>
             <td />
             <td className="px-2 py-2.5">
-              <span className="text-[10px] font-semibold" style={{ color: wasteColor(totalWaste / MEAL_ORDER.length) }}>
-                🗑 {totalWaste.toFixed(1)} kg
+              <span className="text-[10px] font-semibold" style={{ color: wasteColor((totalWaste || 0) / MEAL_ORDER.length) }}>
+                🗑 {(totalWaste || 0).toFixed(1)} kg
               </span>
             </td>
             <td />
@@ -291,7 +295,7 @@ export default function WastagePredictionSection() {
         <div className="flex gap-8">
           <div>
             <p className="text-xs text-gray-500 mb-1">Total skipping today (MH + LH)</p>
-            <p className="text-3xl font-semibold text-gray-100">{totalSkip.toLocaleString()}</p>
+            <p className="text-3xl font-semibold text-gray-100">{(totalSkip ?? 0).toLocaleString()}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500 mb-1">Total predicted wastage</p>
