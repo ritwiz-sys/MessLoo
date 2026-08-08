@@ -1,4 +1,4 @@
-import { SignIn } from '@clerk/react'
+import { SignIn } from '../lib/clerk'
 
 const clerkAppearance = {
   variables: {

@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { useAuth } from '@clerk/react'
+import { useAuth } from './lib/clerk'
 import { UserProvider, useUserContext } from './context/UserContext'
 import LoginPage from './pages/LoginPage'
 import OnboardingPage from './pages/OnboardingPage'

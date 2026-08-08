@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useAuth } from '@clerk/react'
+import { useAuth } from '../lib/clerk'
 import { api } from '../lib/api'
 
 const MEAL_ORDER = ['breakfast', 'lunch', 'snacks', 'dinner']

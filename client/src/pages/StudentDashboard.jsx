@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
-import { useAuth, UserButton } from '@clerk/react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
+import { useAuth, UserButton } from '../lib/clerk'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useUserContext } from '../context/UserContext'
@@ -198,31 +198,100 @@ export default function StudentDashboard() {
     return records
   }, [])
 
+  const loadedKeysRef = useRef(new Set())
+
   useEffect(() => {
     if (profileLoading || !blockCategory) {
       if (!profileLoading) setLoading(false)
       return
     }
     let cancelled = false
+    const cacheKey = `messloo_menu_${blockCategory}_${date}_${menuType}`
+
     const load = async () => {
-      setLoading(true)
+      let hasCache = false
+      try {
+        const cached = localStorage.getItem(cacheKey)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          setMenus(parsed)
+          hasCache = true
+          
+          // Also load cached attendance for these menu items if available
+          const cachedAttendance = {}
+          for (const menu of parsed) {
+            const att = localStorage.getItem(`messloo_attendance_${menu.id}`)
+            if (att) {
+              cachedAttendance[menu.id] = JSON.parse(att)
+            }
+          }
+          setAttendanceMap(cachedAttendance)
+        }
+      } catch (e) {
+        console.error('Failed to load menu cache', e)
+      }
+
+      // If already successfully loaded in this session, use cache and skip network request
+      if (loadedKeysRef.current.has(cacheKey)) {
+        setLoading(false)
+        setError(null)
+        return
+      }
+
+      if (!hasCache) {
+        setLoading(true)
+      }
       setError(null)
+
       try {
         const token = await getToken()
         const res = await api.getMenus(token, { date, block_category: blockCategory, menu_type: menuType })
         const menuItems = res?.data || []
         if (cancelled) return
+
         setMenus(menuItems)
+        
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(menuItems))
+        } catch (e) {
+          console.error('Failed to write menu cache', e)
+        }
+
+        loadedKeysRef.current.add(cacheKey)
+
         if (menuItems.length) {
           const records = await fetchAttendance(menuItems, token)
-          if (!cancelled) setAttendanceMap(records)
+          if (!cancelled) {
+            setAttendanceMap(records)
+            for (const menu of menuItems) {
+              if (records[menu.id]) {
+                try {
+                  localStorage.setItem(`messloo_attendance_${menu.id}`, JSON.stringify(records[menu.id]))
+                } catch (e) {
+                  console.error('Failed to write attendance cache', e)
+                }
+              }
+            }
+          }
+        } else {
+          if (!cancelled) setAttendanceMap({})
         }
       } catch (err) {
-        if (!cancelled) setError(err.message || "Failed to load today's menu")
+        if (cancelled) return
+        if (hasCache) {
+          console.warn('Network request failed, using cached menu', err)
+        } else {
+          const isOffline = !navigator.onLine || err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')
+          const msg = isOffline 
+            ? `You are offline, and the ${MENU_TYPES.find(m => m.key === menuType)?.label || menuType} menu hasn't been cached yet. Please connect to the internet to load it.`
+            : (err.message || "Failed to load today's menu")
+          setError(msg)
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
+
     load()
     return () => { cancelled = true }
   }, [getToken, date, blockCategory, menuType, profileLoading, fetchAttendance])
@@ -234,18 +303,30 @@ export default function StudentDashboard() {
   }, [menus])
 
   const handleMarkAttendance = async (body) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      throw new Error('Cannot mark attendance while offline.')
+    }
     const token = await getToken()
     const res = await api.markAttendance(token, body)
     setAttendanceMap((prev) => ({ ...prev, [body.menu_id]: res?.data }))
+    if (res?.data) {
+      try {
+        localStorage.setItem(`messloo_attendance_${body.menu_id}`, JSON.stringify(res.data))
+      } catch (e) {
+        console.error('Failed to write attendance cache', e)
+      }
+    }
     return res?.data
   }
 
   const handleSubmitFeedback = async (body) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
     const token = await getToken()
     await api.submitFeedback(token, body)
   }
 
   const handlePostMealFeedback = async (entry, stars) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
     const token = await getToken()
     await api.submitFeedback(token, {
       menu_id: entry.menuId,
@@ -369,6 +450,16 @@ export default function StudentDashboard() {
           </div>
         </div>
 
+        {typeof navigator !== 'undefined' && !navigator.onLine && (
+          <div 
+            className="mb-4 rounded-2xl p-3 text-xs font-semibold flex items-center gap-2"
+            style={{ background: 'rgba(245,158,11,0.12)', color: '#92610A', border: '1px solid rgba(245,158,11,0.25)' }}
+          >
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#F59E0B' }} />
+            Offline Mode: Showing cached menu data. Writes are disabled.
+          </div>
+        )}
+
         {(profileError || error) && (
           <div
             className="rounded-2xl p-3 mb-4 text-sm font-medium"
@@ -399,8 +490,9 @@ export default function StudentDashboard() {
 
         {/* Chat CTA */}
         <button
-          onClick={() => navigate('/chat')}
-          className="w-full mt-5 flex items-center gap-3 rounded-2xl px-4 py-4 text-left transition-all active:scale-[0.98]"
+          onClick={typeof navigator !== 'undefined' && !navigator.onLine ? null : () => navigate('/chat')}
+          disabled={typeof navigator !== 'undefined' && !navigator.onLine}
+          className="w-full mt-5 flex items-center gap-3 rounded-2xl px-4 py-4 text-left transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             background: 'rgba(255,255,255,0.7)',
             backdropFilter: 'blur(20px)',
@@ -417,7 +509,9 @@ export default function StudentDashboard() {
           </div>
           <div>
             <p className="text-sm font-bold" style={{ color: '#1C1C1E' }}>Ask Mess AI</p>
-            <p className="text-xs" style={{ color: '#8B7355' }}>What's for dinner? Any specials today?</p>
+            <p className="text-xs" style={{ color: '#8B7355' }}>
+              {typeof navigator !== 'undefined' && !navigator.onLine ? "AI Chat is offline" : "What's for dinner? Any specials today?"}
+            </p>
           </div>
           <span className="ml-auto text-lg font-light" style={{ color: '#C8B89A' }}>›</span>
         </button>
