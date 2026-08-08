@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import { useAuth } from '@clerk/react'
+import { useAuth } from '../lib/clerk'
 import { api } from '../lib/api'
 import { useUserContext } from '../context/UserContext'
 import MealCard from '../components/MealCard'
@@ -90,30 +90,97 @@ export default function MenuPage() {
     return records
   }, [])
 
+  const loadedKeysRef = useRef(new Set())
+
   useEffect(() => {
     if (profileLoading || !blockCategory) return
     let cancelled = false
+    const cacheKey = `messloo_menu_${blockCategory}_${selectedDate}_default`
+
     const load = async () => {
-      setLoading(true)
+      let hasCache = false
+      try {
+        const cached = localStorage.getItem(cacheKey)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          setMenus(parsed)
+          hasCache = true
+
+          // Also load cached attendance for these menu items if available
+          const cachedAttendance = {}
+          for (const menu of parsed) {
+            const att = localStorage.getItem(`messloo_attendance_${menu.id}`)
+            if (att) {
+              cachedAttendance[menu.id] = JSON.parse(att)
+            }
+          }
+          setAttendanceMap(cachedAttendance)
+        }
+      } catch (e) {
+        console.error('Failed to load menu cache', e)
+      }
+
+      // If already successfully loaded in this session, use cache and skip network request
+      if (loadedKeysRef.current.has(cacheKey)) {
+        setLoading(false)
+        setError(null)
+        return
+      }
+
+      if (!hasCache) {
+        setLoading(true)
+      }
       setError(null)
+
       try {
         const token = await getToken()
         const res = await api.getMenus(token, { date: selectedDate, block_category: blockCategory })
         const menuItems = res?.data || []
         if (cancelled) return
+
         setMenus(menuItems)
+
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(menuItems))
+        } catch (e) {
+          console.error('Failed to write menu cache', e)
+        }
+
+        loadedKeysRef.current.add(cacheKey)
+
         if (menuItems.length) {
           const records = await fetchAttendance(menuItems, token)
-          if (!cancelled) setAttendanceMap(records)
+          if (!cancelled) {
+            setAttendanceMap(records)
+            for (const menu of menuItems) {
+              if (records[menu.id]) {
+                try {
+                  localStorage.setItem(`messloo_attendance_${menu.id}`, JSON.stringify(records[menu.id]))
+                } catch (e) {
+                  console.error('Failed to write attendance cache', e)
+                }
+              }
+            }
+          }
         } else {
-          setAttendanceMap({})
+          if (!cancelled) setAttendanceMap({})
         }
       } catch (err) {
-        if (!cancelled) setError(err.message || 'Failed to load menu')
+        if (cancelled) return
+        if (hasCache) {
+          console.warn('Network request failed, using cached menu', err)
+        } else {
+          const isOffline = !navigator.onLine || err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')
+          const msg = isOffline 
+            ? "You are offline, and this menu hasn't been cached yet. Please connect to the internet to load it."
+            : (err.message || 'Failed to load menu')
+          setError(msg)
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
+
     load()
     return () => { cancelled = true }
   }, [getToken, selectedDate, blockCategory, profileLoading, fetchAttendance])
@@ -125,13 +192,24 @@ export default function MenuPage() {
   }, [menus])
 
   const handleMarkAttendance = async (body) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      throw new Error('Cannot mark attendance while offline.')
+    }
     const token = await getToken()
     const res = await api.markAttendance(token, body)
     setAttendanceMap((prev) => ({ ...prev, [body.menu_id]: res?.data }))
+    if (res?.data) {
+      try {
+        localStorage.setItem(`messloo_attendance_${body.menu_id}`, JSON.stringify(res.data))
+      } catch (e) {
+        console.error('Failed to write attendance cache', e)
+      }
+    }
     return res?.data
   }
 
   const handleSubmitFeedback = async (body) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
     const token = await getToken()
     await api.submitFeedback(token, body)
   }
@@ -207,6 +285,16 @@ export default function MenuPage() {
             <span className="text-xs font-medium" style={{ color: '#6B6B6B' }}>Upcoming</span>
           )}
         </div>
+
+        {typeof navigator !== 'undefined' && !navigator.onLine && (
+          <div 
+            className="mb-4 rounded-2xl p-3 text-xs font-semibold flex items-center gap-2"
+            style={{ background: 'rgba(245,158,11,0.12)', color: '#92610A', border: '1px solid rgba(245,158,11,0.25)' }}
+          >
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#F59E0B' }} />
+            Offline Mode: Showing cached menu data. Writes are disabled.
+          </div>
+        )}
 
         {error && (
           <div className="rounded-2xl p-3 mb-4 text-sm font-medium" style={{ background: '#FFF0F1', color: '#E23744', border: '1px solid #FCCFD2' }}>

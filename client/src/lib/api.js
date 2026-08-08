@@ -7,6 +7,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000
  * @param {object} [options]
  */
 export async function apiFetch(path, token, options = {}) {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    throw new Error('You are offline. Please check your internet connection.')
+  }
+
   const headers = {
     ...(options.body ? { 'Content-Type': 'application/json' } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -44,8 +48,13 @@ export const api = {
   updateMe: (token, body) =>
     apiFetch('/users/me', token, { method: 'PATCH', body: JSON.stringify(body) }),
 
-  getMenus: (token, { date, block_category }) =>
-    apiFetch(`/menus?date=${encodeURIComponent(date)}&block_category=${encodeURIComponent(block_category)}`, token),
+  getMenus: (token, { date, block_category, menu_type }) => {
+    let url = `/menus?date=${encodeURIComponent(date)}&block_category=${encodeURIComponent(block_category)}`
+    if (menu_type) {
+      url += `&menu_type=${encodeURIComponent(menu_type)}`
+    }
+    return apiFetch(url, token)
+  },
 
   addMenu: (token, body) =>
     apiFetch('/menus', token, { method: 'POST', body: JSON.stringify(body) }),

@@ -1,4 +1,4 @@
-import { UserButton } from '@clerk/react'
+import { UserButton } from '../lib/clerk'
 
 export default function TopBar({ title, subtitle }) {
   return (

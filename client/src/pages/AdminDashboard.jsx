@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useAuth } from '@clerk/react'
+import { useAuth } from '../lib/clerk'
 import { api } from '../lib/api'
 import { useUserContext } from '../context/UserContext'
 import TopBar from '../components/TopBar'

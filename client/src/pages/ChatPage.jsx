@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useAuth } from '@clerk/react'
+import { useAuth } from '../lib/clerk'
 import { api } from '../lib/api'
 import BottomTabBar from '../components/BottomTabBar'
 
@@ -78,6 +78,10 @@ export default function ChatPage() {
   }, [messages, sending])
 
   const handleSend = async (text) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setError('You are offline. AI Chat is not available offline.')
+      return
+    }
     const trimmed = (text ?? question).trim()
     if (!trimmed || sending) return
     setQuestion('')
@@ -148,6 +152,15 @@ export default function ChatPage() {
 
       {/* ── Messages ── */}
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
+        {typeof navigator !== 'undefined' && !navigator.onLine && (
+          <div 
+            className="rounded-2xl p-3 text-xs font-semibold flex items-center gap-2"
+            style={{ background: 'rgba(245,158,11,0.12)', color: '#92610A', border: '1px solid rgba(245,158,11,0.25)' }}
+          >
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#F59E0B' }} />
+            Offline Mode: AI Chat is unavailable while offline.
+          </div>
+        )}
 
         {/* Welcome / suggestion chips */}
         {isEmpty && (
@@ -165,21 +178,25 @@ export default function ChatPage() {
               Ask about meals, specials, ingredients, or schedules.
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
-              {SUGGESTIONS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => handleSend(s)}
-                  className="rounded-full text-xs font-semibold px-4 py-2 transition-all active:scale-95"
-                  style={{
-                    background: '#FFFFFF',
-                    color: '#E23744',
-                    border: '1px solid #FCCFD2',
-                    boxShadow: '0 2px 8px rgba(226,55,68,0.08)',
-                  }}
-                >
-                  {s}
-                </button>
-              ))}
+              {SUGGESTIONS.map((s) => {
+                const offline = typeof navigator !== 'undefined' && !navigator.onLine
+                return (
+                  <button
+                    key={s}
+                    onClick={offline ? null : () => handleSend(s)}
+                    disabled={offline}
+                    className="rounded-full text-xs font-semibold px-4 py-2 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{
+                      background: '#FFFFFF',
+                      color: offline ? '#8B7355' : '#E23744',
+                      border: offline ? '1px solid #F0E6D3' : '1px solid #FCCFD2',
+                      boxShadow: offline ? 'none' : '0 2px 8px rgba(226,55,68,0.08)',
+                    }}
+                  >
+                    {s}
+                  </button>
+                )
+              })}
             </div>
           </div>
         )}
@@ -225,13 +242,14 @@ export default function ChatPage() {
           <textarea
             ref={inputRef}
             value={question}
+            disabled={typeof navigator !== 'undefined' && !navigator.onLine}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
             }}
-            placeholder="Ask about the mess menu…"
+            placeholder={typeof navigator !== 'undefined' && !navigator.onLine ? "AI Chat is offline..." : "Ask about the mess menu…"}
             rows={1}
-            className="flex-1 resize-none bg-transparent text-sm outline-none py-1"
+            className="flex-1 resize-none bg-transparent text-sm outline-none py-1 disabled:opacity-50"
             style={{
               color: '#1C1C1E',
               maxHeight: 96,
@@ -240,7 +258,7 @@ export default function ChatPage() {
           />
           <button
             onClick={() => handleSend()}
-            disabled={sending || !question.trim()}
+            disabled={sending || !question.trim() || (typeof navigator !== 'undefined' && !navigator.onLine)}
             className="w-9 h-9 flex items-center justify-center rounded-xl shrink-0 transition-all active:scale-95 disabled:opacity-40"
             style={{ background: '#E23744', boxShadow: '0 3px 10px rgba(226,55,68,0.3)' }}
           >

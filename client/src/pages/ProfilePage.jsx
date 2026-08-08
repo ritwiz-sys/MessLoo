@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '@clerk/react'
-import { UserButton } from '@clerk/react'
+import { useAuth, UserButton } from '../lib/clerk'
 import { api } from '../lib/api'
 import { useUserContext } from '../context/UserContext'
 import BottomTabBar from '../components/BottomTabBar'
@@ -25,9 +24,10 @@ function DishChip({ name, type, onRemove }) {
 }
 
 // ── Add dish input ─────────────────────────────────────────────────────────────
-function AddDishInput({ type, onAdd, loading }) {
+function AddDishInput({ type, onAdd, loading, disabled }) {
   const [value, setValue] = useState('')
   const submit = () => {
+    if (disabled) return
     const v = value.trim()
     if (!v) return
     onAdd(v)
@@ -38,15 +38,16 @@ function AddDishInput({ type, onAdd, loading }) {
       <input
         type="text"
         value={value}
+        disabled={disabled}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && submit()}
-        placeholder={type === 'like' ? 'e.g. chicken curry' : 'e.g. bitter gourd'}
-        className="flex-1 rounded-2xl text-xs px-3 py-2 outline-none"
+        placeholder={disabled ? "Offline..." : (type === 'like' ? 'e.g. chicken curry' : 'e.g. bitter gourd')}
+        className="flex-1 rounded-2xl text-xs px-3 py-2 outline-none disabled:opacity-50"
         style={{ background: '#FAFAFA', border: '1px solid #F0E6D3', color: '#1C1C1E' }}
       />
       <button
         onClick={submit}
-        disabled={!value.trim() || loading}
+        disabled={!value.trim() || loading || disabled}
         className="rounded-2xl px-3 py-2 text-xs font-bold disabled:opacity-40 transition-all active:scale-95"
         style={
           type === 'like'
@@ -181,6 +182,27 @@ export default function ProfilePage() {
   useEffect(() => {
     let cancelled = false
     const load = async () => {
+      // Offline fallback
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        try {
+          const cachedPrefs = localStorage.getItem('messloo_user_preferences')
+          if (cachedPrefs) {
+            setPreferences(JSON.parse(cachedPrefs))
+          }
+          const cachedFeed = localStorage.getItem('messloo_user_feedback')
+          if (cachedFeed) {
+            setFeedbackList(JSON.parse(cachedFeed))
+          }
+        } catch (e) {
+          console.error('Failed to load profile details offline', e)
+        }
+        if (!cancelled) {
+          setLoadingPrefs(false)
+          setLoadingFeedback(false)
+        }
+        return
+      }
+
       try {
         const token = await getToken()
         const [prefsRes, feedRes] = await Promise.all([
@@ -188,11 +210,19 @@ export default function ProfilePage() {
           api.getFeedback(token),
         ])
         if (!cancelled) {
-          setPreferences({
+          const prefs = {
             liked_dishes: prefsRes?.data?.liked_dishes || [],
             disliked_dishes: prefsRes?.data?.disliked_dishes || [],
-          })
-          setFeedbackList(feedRes?.data || [])
+          }
+          const feedback = feedRes?.data || []
+          setPreferences(prefs)
+          setFeedbackList(feedback)
+          try {
+            localStorage.setItem('messloo_user_preferences', JSON.stringify(prefs))
+            localStorage.setItem('messloo_user_feedback', JSON.stringify(feedback))
+          } catch (e) {
+            console.error('Failed to write preferences cache', e)
+          }
         }
       } catch { /* not critical */ }
       finally {
@@ -204,26 +234,39 @@ export default function ProfilePage() {
   }, [getToken])
 
   const handleLike = async (dishName) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
     setPrefSaving(true)
     try {
       const token = await getToken()
       const res = await api.likeDish(token, dishName)
-      if (res?.data) setPreferences(res.data)
+      if (res?.data) {
+        setPreferences(res.data)
+        try {
+          localStorage.setItem('messloo_user_preferences', JSON.stringify(res.data))
+        } catch {}
+      }
     } catch { /* ignore */ }
     finally { setPrefSaving(false) }
   }
 
   const handleDislike = async (dishName) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
     setPrefSaving(true)
     try {
       const token = await getToken()
       const res = await api.dislikeDish(token, dishName)
-      if (res?.data) setPreferences(res.data)
+      if (res?.data) {
+        setPreferences(res.data)
+        try {
+          localStorage.setItem('messloo_user_preferences', JSON.stringify(res.data))
+        } catch {}
+      }
     } catch { /* ignore */ }
     finally { setPrefSaving(false) }
   }
 
   const handleSaveProfile = async () => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
     if (!editName.trim()) return
     setSavingProfile(true)
     try {
@@ -236,9 +279,18 @@ export default function ProfilePage() {
   }
 
   const handleSubmitFeedback = async (body) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
     const token = await getToken()
     const res = await api.submitFeedback(token, body)
-    if (res?.data) setFeedbackList((prev) => [res.data, ...prev])
+    if (res?.data) {
+      setFeedbackList((prev) => {
+        const newList = [res.data, ...prev]
+        try {
+          localStorage.setItem('messloo_user_feedback', JSON.stringify(newList))
+        } catch {}
+        return newList
+      })
+    }
   }
 
   const STATUS_COLORS = {
@@ -278,6 +330,15 @@ export default function ProfilePage() {
 
       {/* ── Scrollable content ── */}
       <main className="flex-1 overflow-y-auto px-4 pb-28 max-w-lg mx-auto w-full">
+        {typeof navigator !== 'undefined' && !navigator.onLine && (
+          <div 
+            className="mb-4 rounded-2xl p-3 text-xs font-semibold flex items-center gap-2 mt-4"
+            style={{ background: 'rgba(245,158,11,0.12)', color: '#92610A', border: '1px solid rgba(245,158,11,0.25)' }}
+          >
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#F59E0B' }} />
+            Offline Mode: Showing cached profile and settings. Writes are disabled.
+          </div>
+        )}
 
         {/* ── Edit profile card ── */}
         <section
@@ -287,8 +348,9 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold" style={{ color: '#1C1C1E' }}>Profile Details</h2>
             <button
-              onClick={() => setEditing((e) => !e)}
-              className="text-xs font-semibold"
+              onClick={typeof navigator !== 'undefined' && !navigator.onLine ? null : () => setEditing((e) => !e)}
+              disabled={typeof navigator !== 'undefined' && !navigator.onLine}
+              className="text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
               style={{ color: '#E23744' }}
             >
               {editing ? 'Cancel' : 'Edit'}
@@ -366,7 +428,7 @@ export default function ProfilePage() {
                     ))
                   )}
                 </div>
-                <AddDishInput type="like" onAdd={handleLike} loading={prefSaving} />
+                 <AddDishInput type="like" onAdd={handleLike} loading={prefSaving} disabled={typeof navigator !== 'undefined' && !navigator.onLine} />
               </div>
 
               <div style={{ borderTop: '1px solid #F0E6D3', paddingTop: 12 }}>
@@ -380,7 +442,7 @@ export default function ProfilePage() {
                     ))
                   )}
                 </div>
-                <AddDishInput type="dislike" onAdd={handleDislike} loading={prefSaving} />
+                 <AddDishInput type="dislike" onAdd={handleDislike} loading={prefSaving} disabled={typeof navigator !== 'undefined' && !navigator.onLine} />
               </div>
             </div>
           )}
@@ -394,8 +456,9 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold" style={{ color: '#1C1C1E' }}>My Feedback</h2>
             <button
-              onClick={() => setFeedbackOpen(true)}
-              className="text-xs font-bold px-3 py-1.5 rounded-full active:scale-95"
+              onClick={typeof navigator !== 'undefined' && !navigator.onLine ? null : () => setFeedbackOpen(true)}
+              disabled={typeof navigator !== 'undefined' && !navigator.onLine}
+              className="text-xs font-bold px-3 py-1.5 rounded-full active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
               style={{ background: '#FFE8EA', color: '#E23744' }}
             >
               + Submit

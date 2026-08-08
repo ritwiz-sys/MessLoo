@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useAuth, useUser } from '@clerk/react'
+import { useAuth, useUser } from '../lib/clerk'
 import { api } from '../lib/api'
 
 /**
@@ -23,6 +23,24 @@ export function useCurrentUser() {
     setLoading(true)
     setError(null)
 
+    // Offline flow
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      try {
+        const cached = localStorage.getItem('messloo_user_profile')
+        if (cached) {
+          setProfile(JSON.parse(cached))
+        } else {
+          setError('Offline: No cached profile found. Please connect to the internet.')
+        }
+      } catch (err) {
+        setError('Failed to load offline profile')
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
+    // Online flow
     try {
       const token = await getToken()
 
@@ -37,6 +55,14 @@ export function useCurrentUser() {
 
       const me = await api.getMe(token)
       setProfile(me?.data || null)
+      
+      if (me?.data) {
+        try {
+          localStorage.setItem('messloo_user_profile', JSON.stringify(me.data))
+        } catch (e) {
+          console.error('Failed to write profile cache', e)
+        }
+      }
     } catch (err) {
       setError(err.message || 'Failed to load profile')
     } finally {
@@ -57,6 +83,13 @@ export function useCurrentUser() {
       const token = await getToken()
       const res = await api.updateMe(token, { block_id: blockId })
       setProfile(res?.data || null)
+      if (res?.data) {
+        try {
+          localStorage.setItem('messloo_user_profile', JSON.stringify(res.data))
+        } catch (e) {
+          console.error('Failed to write profile cache', e)
+        }
+      }
       return res?.data
     },
     [getToken],

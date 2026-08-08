@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserContext } from '../context/UserContext'
 import { api } from '../lib/api'
-import { useAuth } from '@clerk/react'
+import { useAuth } from '../lib/clerk'
 
 // ── Inline BlockPicker with warm styles ──────────────────────────────────────
 function WarmBlockPicker({ onSelect }) {
