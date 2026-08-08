@@ -5,6 +5,13 @@ import './index.css'
 import App from './App.jsx'
 import { ClerkProvider } from './lib/clerk'
 
+// Register service worker for offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  })
+}
+
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
 if (!publishableKey) {

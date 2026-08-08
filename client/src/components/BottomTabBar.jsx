@@ -51,8 +51,7 @@ function ProfileIcon({ active }) {
 }
 
 const TABS = [
-  { path: '/dashboard', label: 'Home',    Icon: HomeIcon },
-  { path: '/chat',      label: 'Chat',    Icon: ChatIcon },
+  { path: '/dashboard', label: 'Menu',    Icon: HomeIcon },
   { path: '/profile',   label: 'Profile', Icon: ProfileIcon },
 ]
 
@@ -68,10 +67,11 @@ export default function BottomTabBar() {
       <nav
         className="w-full max-w-lg"
         style={{
-          background: 'rgba(255,252,246,0.92)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderTop: '1px solid rgba(240,230,211,0.6)',
+          background: 'rgba(255,244,236,0.94)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderTop: '1px solid rgba(235,51,73,0.1)',
+          boxShadow: '0 -4px 24px rgba(235,51,73,0.06)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
