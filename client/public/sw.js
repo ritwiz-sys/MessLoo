@@ -1,12 +1,12 @@
-const CACHE = 'messloo-v4'
+const CACHE = 'messloo-v5'
 
 // ─── Standalone offline page ───────────────────────────────────────────────────
-// No Vite / React / Clerk — zero module imports, nothing that 503s.
-// IMPORTANT: this string is a JS template literal. Rules for the inline <script>:
-//   • No backticks (would end the outer template literal)
-//   • No \' (backslash is consumed; use double-quoted JS strings inside)
-//   • No ${…} (would be interpolated by the outer template literal)
-//   • Use data-* attributes + addEventListener instead of inline onclick
+// KEY RULE for this template literal:
+//   ✗ Never use \" or \' — the backslash is consumed by the template literal,
+//     leaving a bare quote that breaks the inner JS string.
+//   ✓ Use SINGLE-QUOTED JS strings ('...') for HTML building.
+//     Double quotes inside HTML attributes need NO escaping inside single-quoted strings.
+//   ✓ Plain " and ' are fine as literal characters; only \x22 / \x27 SEQUENCES are eaten.
 const OFFLINE_PAGE = `<!doctype html>
 <html lang="en">
 <head>
@@ -16,7 +16,7 @@ const OFFLINE_PAGE = `<!doctype html>
   <title>MessLoo</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{background:#FFF4EC;font-family:"Plus Jakarta Sans",system-ui,sans-serif;min-height:100dvh;padding-bottom:80px}
+    body{background:#FFF4EC;font-family:system-ui,sans-serif;min-height:100dvh;padding-bottom:80px}
     .wrap{max-width:512px;margin:0 auto;padding:52px 20px 0}
     .badge{font-size:11px;font-weight:700;padding:6px 12px;border-radius:20px;background:rgba(247,151,30,.15);color:#D97706;border:1px solid rgba(247,151,30,.4);white-space:nowrap}
     .badge-sm{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(247,151,30,.15);color:#D97706;border:1px solid rgba(247,151,30,.3)}
@@ -61,14 +61,14 @@ const OFFLINE_PAGE = `<!doctype html>
 
 <script>
 (function() {
-  var ORDER  = ["breakfast","lunch","snacks","dinner"];
-  var LABELS = {breakfast:"Breakfast",lunch:"Lunch",snacks:"Evening Snacks",dinner:"Dinner"};
-  var TIMES  = {breakfast:"7:30 – 9:00 AM",lunch:"12:00 – 2:00 PM",snacks:"4:00 – 5:30 PM",dinner:"7:00 – 9:30 PM"};
+  var ORDER  = ['breakfast','lunch','snacks','dinner'];
+  var LABELS = {breakfast:'Breakfast',lunch:'Lunch',snacks:'Evening Snacks',dinner:'Dinner'};
+  var TIMES  = {breakfast:'7:30 – 9:00 AM',lunch:'12:00 – 2:00 PM',snacks:'4:00 – 5:30 PM',dinner:'7:00 – 9:30 PM'};
   var GRADS  = {
-    breakfast:"linear-gradient(145deg,#FF9966,#FF5E62)",
-    lunch:    "linear-gradient(145deg,#EB3349,#F45C43)",
-    snacks:   "linear-gradient(145deg,#F7971E,#FFD200)",
-    dinner:   "linear-gradient(145deg,#C94B4B,#8B0000)"
+    breakfast:'linear-gradient(145deg,#FF9966,#FF5E62)',
+    lunch:    'linear-gradient(145deg,#EB3349,#F45C43)',
+    snacks:   'linear-gradient(145deg,#F7971E,#FFD200)',
+    dinner:   'linear-gradient(145deg,#C94B4B,#8B0000)'
   };
 
   function todayISO() {
@@ -77,19 +77,21 @@ const OFFLINE_PAGE = `<!doctype html>
   }
   function greeting() {
     var h = new Date().getHours();
-    return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+    return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
   }
-  function getCached(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch(e) { return null; } }
+  function getCached(k) {
+    try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e) { return null; }
+  }
   function splitDishes(s) {
     if (!s) return [];
     return s.split(/[,;|\/]/).map(function(x) { return x.trim(); }).filter(Boolean);
   }
 
   var date  = todayISO();
-  var block = localStorage.getItem("messloo_user_block") || "";
-  var name  = (localStorage.getItem("messloo_user_name") || "Student").split(" ")[0];
-  var menus = getCached("messloo_menus_" + date + "_" + block + "_veg")
-           || getCached("messloo_menus_" + date + "_" + block + "_non_veg")
+  var block = localStorage.getItem('messloo_user_block') || '';
+  var name  = (localStorage.getItem('messloo_user_name') || 'Student').split(' ')[0];
+  var menus = getCached('messloo_menus_' + date + '_' + block + '_veg')
+           || getCached('messloo_menus_' + date + '_' + block + '_non_veg')
            || [];
 
   var menuMap = {};
@@ -100,104 +102,110 @@ const OFFLINE_PAGE = `<!doctype html>
     var item = menuMap[mt];
     if (!item) return;
     var dishes = splitDishes(item.items);
-    document.getElementById("sheet-accent").style.background = GRADS[mt];
-    document.getElementById("sheet-title").textContent = LABELS[mt];
-    document.getElementById("sheet-time").textContent = TIMES[mt];
-    var dishesEl = document.getElementById("sheet-dishes");
-    var emptyEl  = document.getElementById("sheet-empty");
+    document.getElementById('sheet-accent').style.background = GRADS[mt];
+    document.getElementById('sheet-title').textContent = LABELS[mt];
+    document.getElementById('sheet-time').textContent  = TIMES[mt];
+    var dishesEl = document.getElementById('sheet-dishes');
+    var emptyEl  = document.getElementById('sheet-empty');
     if (dishes.length === 0) {
-      dishesEl.style.display = "none";
-      emptyEl.style.display  = "block";
+      dishesEl.style.display = 'none';
+      emptyEl.style.display  = 'block';
     } else {
-      emptyEl.style.display  = "none";
-      dishesEl.style.display = "block";
+      emptyEl.style.display  = 'none';
+      dishesEl.style.display = 'block';
       dishesEl.innerHTML = dishes.map(function(d, i) {
-        return "<div class=\"dish-row\" style=\"background:" + (i % 2 === 0 ? "#FFFAF5" : "#FFF6EE")
-          + ";" + (i < dishes.length - 1 ? "border-bottom:1px solid #F0E6D3" : "") + "\">"
-          + "<span class=\"dish-dot\"></span>"
-          + "<span class=\"dish-name\">" + d + "</span>"
-          + "</div>";
-      }).join("");
+        var bg  = i % 2 === 0 ? '#FFFAF5' : '#FFF6EE';
+        var sep = i < dishes.length - 1 ? 'border-bottom:1px solid #F0E6D3;' : '';
+        return '<div class="dish-row" style="background:' + bg + ';' + sep + '">'
+          + '<span class="dish-dot"></span>'
+          + '<span class="dish-name">' + d + '</span>'
+          + '</div>';
+      }).join('');
     }
-    document.getElementById("overlay").style.display = "block";
-    document.getElementById("sheet").style.display = "block";
+    document.getElementById('overlay').style.display = 'block';
+    document.getElementById('sheet').style.display   = 'block';
   }
-  function closeSheet() {
-    document.getElementById("overlay").style.display = "none";
-    document.getElementById("sheet").style.display   = "none";
-  }
-  document.getElementById("overlay").addEventListener("click", closeSheet);
-  document.getElementById("close-btn").addEventListener("click", closeSheet);
 
-  /* ── card HTML ── */
+  function closeSheet() {
+    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('sheet').style.display   = 'none';
+  }
+  document.getElementById('overlay').addEventListener('click', closeSheet);
+  document.getElementById('close-btn').addEventListener('click', closeSheet);
+
+  /* ── card ── */
   function card(mt) {
     var item    = menuMap[mt];
     var dishes  = item ? splitDishes(item.items) : [];
-    var preview = dishes.slice(0, 3).join("  ·  ") + (dishes.length > 3 ? "  +" + (dishes.length - 3) : "");
-    return "<div class=\"card" + (item ? " clickable" : "") + "\" data-meal=\"" + mt + "\""
-      + " style=\"background:" + GRADS[mt] + ";box-shadow:0 8px 28px rgba(0,0,0,.18)\">"
-      + "<div class=\"card-time\">" + TIMES[mt] + "</div>"
-      + "<div class=\"card-title\">" + LABELS[mt] + "</div>"
+    var mid     = '·';
+    var preview = dishes.slice(0, 3).join('  ' + mid + '  ')
+                  + (dishes.length > 3 ? '  +' + (dishes.length - 3) : '');
+    var arrow   = '<div class="card-arrow">'
+      + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none">'
+      + '<path d="M5 12H19M13 6L19 12L13 18" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+      + '</svg></div>';
+
+    return '<div class="card' + (item ? ' clickable' : '') + '" data-meal="' + mt + '"'
+      + ' style="background:' + GRADS[mt] + ';box-shadow:0 8px 28px rgba(0,0,0,.18)">'
+      + '<div class="card-time">' + TIMES[mt] + '</div>'
+      + '<div class="card-title">' + LABELS[mt] + '</div>'
       + (item
-          ? "<div class=\"card-preview\">" + (preview || item.items) + "</div>"
-          : "<div class=\"card-empty\">Menu not posted</div>")
-      + "<div class=\"card-footer\">"
-      + (item
-          ? "<div class=\"card-arrow\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M5 12H19M13 6L19 12L13 18\" stroke=\"white\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></div>"
-          : "<span></span>")
-      + (dishes.length > 0 ? "<span class=\"card-count\">" + dishes.length + " dishes</span>" : "")
-      + "</div>"
-      + "<div class=\"deco1\"></div><div class=\"deco2\"></div>"
-      + "</div>";
+          ? '<div class="card-preview">' + (preview || item.items) + '</div>'
+          : '<div class="card-empty">Menu not posted</div>')
+      + '<div class="card-footer">'
+      + (item ? arrow : '<span></span>')
+      + (dishes.length > 0 ? '<span class="card-count">' + dishes.length + ' dishes</span>' : '')
+      + '</div>'
+      + '<div class="deco1"></div><div class="deco2"></div>'
+      + '</div>';
   }
 
-  /* ── render ── */
-  document.getElementById("app").innerHTML =
-    "<div style=\"display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px\">"
-    + "<div>"
-    + "<p style=\"font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#B08040;margin-bottom:4px\">" + greeting() + "</p>"
-    + "<h1 style=\"font-size:26px;font-weight:900;color:#1C1C1E;line-height:1.1;margin-bottom:5px\">" + name + "</h1>"
-    + (block ? "<p style=\"font-size:11px;font-weight:600;color:#8B7355\">" + block + "</p>" : "")
-    + "</div>"
-    + "<span class=\"badge\">Offline</span>"
-    + "</div>"
-    + "<div style=\"display:flex;align-items:center;gap:8px\">"
-    + "<h2 style=\"font-size:15px;font-weight:900;color:#1C1C1E\">Today&#39;s Menu</h2>"
-    + "<span class=\"badge-sm\">Cached</span>"
-    + "</div>"
+  /* ── render page ── */
+  document.getElementById('app').innerHTML =
+    '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px">'
+    + '<div>'
+    + '<p style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#B08040;margin-bottom:4px">' + greeting() + '</p>'
+    + '<h1 style="font-size:26px;font-weight:900;color:#1C1C1E;line-height:1.1;margin-bottom:5px">' + name + '</h1>'
+    + (block ? '<p style="font-size:11px;font-weight:600;color:#8B7355">' + block + '</p>' : '')
+    + '</div>'
+    + '<span class="badge">Offline</span>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:8px">'
+    + '<h2 style="font-size:15px;font-weight:900;color:#1C1C1E">Today&#39;s Menu</h2>'
+    + '<span class="badge-sm">Cached</span>'
+    + '</div>'
     + (menus.length === 0
-        ? "<div style=\"text-align:center;margin-top:48px\"><p style=\"font-size:13px;font-weight:600;color:#8B7355;margin-bottom:6px\">No cached menu for today.</p><p style=\"font-size:11px;color:#B0956E\">Open the app while online to cache today&#39;s menu.</p></div>"
-        : "<div class=\"grid\">" + ORDER.map(card).join("") + "</div>")
-    + "<p class=\"hint\">Connect to internet to mark attendance or rate meals.</p>";
+        ? '<div style="text-align:center;margin-top:48px">'
+          + '<p style="font-size:13px;font-weight:600;color:#8B7355;margin-bottom:6px">No cached menu for today.</p>'
+          + '<p style="font-size:11px;color:#B0956E">Open the app while online to cache today&#39;s menu.</p>'
+          + '</div>'
+        : '<div class="grid">' + ORDER.map(card).join('') + '</div>')
+    + '<p class="hint">Connect to internet to mark attendance or rate meals.</p>';
 
-  /* ── wire up card taps after render ── */
-  document.querySelectorAll(".card.clickable").forEach(function(el) {
-    el.addEventListener("click", function() {
-      openSheet(el.getAttribute("data-meal"));
-    });
+  /* ── wire card taps ── */
+  document.querySelectorAll('.card.clickable').forEach(function(el) {
+    el.addEventListener('click', function() { openSheet(el.getAttribute('data-meal')); });
   });
 })();
 </script>
 </body>
 </html>`
 
-// ─── Install ──────────────────────────────────────────────────────────────────
+/* ── Install ── */
 self.addEventListener('install', (e) => {
   e.waitUntil(self.skipWaiting())
 })
 
-// ─── Activate ─────────────────────────────────────────────────────────────────
+/* ── Activate ── */
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(
-        keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))
-      ))
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   )
 })
 
-// ─── Fetch ────────────────────────────────────────────────────────────────────
+/* ── Fetch ── */
 self.addEventListener('fetch', (e) => {
   const { request } = e
   const url = new URL(request.url)
@@ -218,6 +226,7 @@ self.addEventListener('fetch', (e) => {
         return res
       })
       .catch(async () => {
+        // Navigation → standalone offline page (no Vite/module refs → nothing 503s)
         if (request.mode === 'navigate') {
           return new Response(OFFLINE_PAGE, {
             status: 200,
