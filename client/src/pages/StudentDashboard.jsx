@@ -129,6 +129,12 @@ export default function StudentDashboard() {
     try { return JSON.parse(localStorage.getItem(cacheKey(bc, mt)) || 'null') } catch { return null }
   }, [cacheKey])
 
+  // Save user info to localStorage so OfflineFallback can show it without Clerk
+  useEffect(() => {
+    if (blockCategory) localStorage.setItem('messloo_user_block', blockCategory)
+    if (profile?.name) localStorage.setItem('messloo_user_name', profile.name)
+  }, [blockCategory, profile?.name])
+
   useEffect(() => {
     const entry = popPendingFeedback()
     if (entry) setPendingFeedback(entry)
