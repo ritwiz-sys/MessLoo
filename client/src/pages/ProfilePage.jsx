@@ -43,7 +43,7 @@ function AddDishInput({ type, onAdd, loading, disabled }) {
         onKeyDown={(e) => e.key === 'Enter' && submit()}
         placeholder={disabled ? "Offline..." : (type === 'like' ? 'e.g. chicken curry' : 'e.g. bitter gourd')}
         className="flex-1 rounded-2xl text-xs px-3 py-2 outline-none disabled:opacity-50"
-        style={{ background: '#FAFAFA', border: '1px solid #F0E6D3', color: '#1C1C1E' }}
+        style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
       />
       <button
         onClick={submit}
@@ -93,19 +93,24 @@ function FeedbackModal({ onClose, onSubmit }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: 'rgba(28,28,30,0.5)' }}
+      style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
         className="w-full max-w-lg rounded-t-3xl px-5 pt-5 pb-10 flex flex-col gap-4"
-        style={{ background: '#FFFFFF', border: '1px solid #F0E6D3' }}
+        style={{
+          background: 'var(--modal-bg)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderTop: '1px solid var(--modal-border)',
+        }}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold" style={{ color: '#1C1C1E' }}>Submit Feedback</h2>
+          <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Submit Feedback</h2>
           <button
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-xl"
-            style={{ background: '#F5EDE4', color: '#6B6B6B' }}
+            style={{ background: 'var(--toggle-bg)', color: 'var(--text-muted)' }}
           >
             ✕
           </button>
@@ -121,7 +126,7 @@ function FeedbackModal({ onClose, onSubmit }) {
               style={
                 category === cat.value
                   ? { background: '#E23744', color: '#FFFFFF' }
-                  : { background: '#F5EDE4', color: '#6B6B6B' }
+                  : { background: 'var(--toggle-bg)', color: 'var(--text-muted)' }
               }
             >
               {cat.label}
@@ -136,10 +141,10 @@ function FeedbackModal({ onClose, onSubmit }) {
           placeholder="Tell us what you think…"
           rows={4}
           className="w-full rounded-2xl text-sm px-4 py-3 resize-none outline-none"
-          style={{ background: '#FFF8F0', border: '1px solid #F0E6D3', color: '#1C1C1E' }}
+          style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
         />
 
-        {error && <p className="text-xs" style={{ color: '#E23744' }}>{error}</p>}
+        {error && <p className="text-xs" style={{ color: 'var(--error-color)' }}>{error}</p>}
 
         <button
           onClick={handleSubmit}
@@ -300,27 +305,27 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#FFF8F0' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'transparent' }}>
       {/* ── Header ── */}
       <header
-        className="px-4 pt-10 pb-5"
-        style={{ background: 'linear-gradient(160deg, #FFF8F0 0%, #FFEEE8 100%)' }}
+        className="px-4 pb-5"
+        style={{
+          paddingTop: 'max(40px, calc(env(safe-area-inset-top, 0px) + 10px))',
+          background: 'transparent',
+        }}
       >
         <div className="max-w-lg mx-auto flex items-center gap-4">
-          <UserButton
-            appearance={{
-              elements: { userButtonAvatarBox: 'w-14 h-14' },
-            }}
-          />
+          <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-14 h-14' } }} />
           <div className="min-w-0">
-            <h1 className="text-xl font-extrabold truncate" style={{ color: '#1C1C1E' }}>
+            <h1 className="text-xl font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>
               {profile?.name || 'My Profile'}
             </h1>
             {profile?.college_id && (
-              <p className="text-sm" style={{ color: '#6B6B6B' }}>{profile.college_id}</p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{profile.college_id}</p>
             )}
             {blockName && (
-              <span className="inline-block mt-1 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: '#FFE8EA', color: '#E23744' }}>
+              <span className="inline-block mt-1 text-xs font-semibold px-2.5 py-1 rounded-full"
+                style={{ background: 'var(--pill-bg)', color: 'var(--pill-color)', border: '1px solid var(--pill-border)' }}>
                 🏠 {blockName}{cateringCompany ? ` · ${cateringCompany}` : ''}
               </span>
             )}
@@ -343,10 +348,10 @@ export default function ProfilePage() {
         {/* ── Edit profile card ── */}
         <section
           className="rounded-2xl px-4 py-4 mt-4"
-          style={{ background: '#FFFFFF', border: '1px solid #F0E6D3', boxShadow: '0 2px 8px rgba(226,55,68,0.05)' }}
+          style={{ background: 'var(--modal-bg)', border: '1px solid var(--dish-border)', backdropFilter: 'var(--card-blur)', WebkitBackdropFilter: 'var(--card-blur)' }}
         >
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-bold" style={{ color: '#1C1C1E' }}>Profile Details</h2>
+            <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Profile Details</h2>
             <button
               onClick={typeof navigator !== 'undefined' && !navigator.onLine ? null : () => setEditing((e) => !e)}
               disabled={typeof navigator !== 'undefined' && !navigator.onLine}
@@ -360,23 +365,23 @@ export default function ProfilePage() {
           {editing ? (
             <div className="flex flex-col gap-3">
               <div>
-                <label className="block text-xs font-semibold mb-1" style={{ color: '#6B6B6B' }}>Name</label>
+                <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Name</label>
                 <input
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   className="w-full rounded-2xl text-sm px-3 py-2.5 outline-none"
-                  style={{ background: '#FFF8F0', border: '1px solid #F0E6D3', color: '#1C1C1E' }}
+                  style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1" style={{ color: '#6B6B6B' }}>College ID</label>
+                <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>College ID</label>
                 <input
                   type="text"
                   value={editId}
                   onChange={(e) => setEditId(e.target.value)}
                   className="w-full rounded-2xl text-sm px-3 py-2.5 outline-none"
-                  style={{ background: '#FFF8F0', border: '1px solid #F0E6D3', color: '#1C1C1E' }}
+                  style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                 />
               </div>
               <button
@@ -389,7 +394,7 @@ export default function ProfilePage() {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-1.5 text-sm" style={{ color: '#1C1C1E' }}>
+            <div className="flex flex-col gap-1.5 text-sm" style={{ color: 'var(--text-primary)' }}>
               <div className="flex items-center gap-2">
                 <span style={{ color: '#6B6B6B', fontSize: 12 }}>Name</span>
                 <span className="font-semibold">{profile?.name || '—'}</span>
@@ -405,9 +410,9 @@ export default function ProfilePage() {
         {/* ── Preferences card ── */}
         <section
           className="rounded-2xl px-4 py-4 mt-3"
-          style={{ background: '#FFFFFF', border: '1px solid #F0E6D3', boxShadow: '0 2px 8px rgba(226,55,68,0.05)' }}
+          style={{ background: 'var(--modal-bg)', border: '1px solid var(--dish-border)', backdropFilter: 'var(--card-blur)', WebkitBackdropFilter: 'var(--card-blur)' }}
         >
-          <h2 className="text-sm font-bold mb-3" style={{ color: '#1C1C1E' }}>Food Preferences</h2>
+          <h2 className="text-sm font-bold mb-3" style={{ color: 'var(--text-primary)' }}>Food Preferences</h2>
 
           {loadingPrefs ? (
             <div className="flex flex-col gap-2">
@@ -418,10 +423,10 @@ export default function ProfilePage() {
           ) : (
             <div className="flex flex-col gap-4">
               <div>
-                <p className="text-xs font-bold mb-2" style={{ color: '#6B6B6B' }}>👍 Liked dishes</p>
+                <p className="text-xs font-bold mb-2" style={{ color: 'var(--text-muted)' }}>👍 Liked dishes</p>
                 <div className="flex flex-wrap gap-2">
                   {preferences.liked_dishes.length === 0 ? (
-                    <p className="text-xs italic" style={{ color: '#D1C4A8' }}>None added yet</p>
+                    <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>None added yet</p>
                   ) : (
                     preferences.liked_dishes.map((d) => (
                       <DishChip key={d} name={d} type="like" />
@@ -432,10 +437,10 @@ export default function ProfilePage() {
               </div>
 
               <div style={{ borderTop: '1px solid #F0E6D3', paddingTop: 12 }}>
-                <p className="text-xs font-bold mb-2" style={{ color: '#6B6B6B' }}>👎 Disliked dishes</p>
+                <p className="text-xs font-bold mb-2" style={{ color: 'var(--text-muted)' }}>👎 Disliked dishes</p>
                 <div className="flex flex-wrap gap-2">
                   {preferences.disliked_dishes.length === 0 ? (
-                    <p className="text-xs italic" style={{ color: '#D1C4A8' }}>None added yet</p>
+                    <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>None added yet</p>
                   ) : (
                     preferences.disliked_dishes.map((d) => (
                       <DishChip key={d} name={d} type="dislike" />
@@ -451,10 +456,10 @@ export default function ProfilePage() {
         {/* ── Feedback card ── */}
         <section
           className="rounded-2xl px-4 py-4 mt-3"
-          style={{ background: '#FFFFFF', border: '1px solid #F0E6D3', boxShadow: '0 2px 8px rgba(226,55,68,0.05)' }}
+          style={{ background: 'var(--modal-bg)', border: '1px solid var(--dish-border)', backdropFilter: 'var(--card-blur)', WebkitBackdropFilter: 'var(--card-blur)' }}
         >
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-bold" style={{ color: '#1C1C1E' }}>My Feedback</h2>
+            <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>My Feedback</h2>
             <button
               onClick={typeof navigator !== 'undefined' && !navigator.onLine ? null : () => setFeedbackOpen(true)}
               disabled={typeof navigator !== 'undefined' && !navigator.onLine}
@@ -474,7 +479,7 @@ export default function ProfilePage() {
           ) : feedbackList.length === 0 ? (
             <div className="py-6 text-center">
               <span className="text-3xl block mb-2">📬</span>
-              <p className="text-sm" style={{ color: '#6B6B6B' }}>No feedback submitted yet</p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No feedback submitted yet</p>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
@@ -484,10 +489,10 @@ export default function ProfilePage() {
                   <div
                     key={fb.id}
                     className="rounded-2xl px-3 py-3"
-                    style={{ background: '#FAFAFA', border: '1px solid #F0E6D3' }}
+                    style={{ background: 'var(--dish-odd)', border: '1px solid var(--dish-border)' }}
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-xs font-bold capitalize" style={{ color: '#1C1C1E' }}>
+                      <span className="text-xs font-bold capitalize" style={{ color: 'var(--text-primary)' }}>
                         {fb.category?.replace(/_/g, ' ')}
                       </span>
                       <span
@@ -497,11 +502,11 @@ export default function ProfilePage() {
                         {fb.status?.replace(/_/g, ' ')}
                       </span>
                     </div>
-                    <p className="text-xs leading-relaxed" style={{ color: '#6B6B6B' }}>
+                    <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                       {fb.message}
                     </p>
                     {fb.created_at && (
-                      <p className="text-[10px] mt-1" style={{ color: '#D1C4A8' }}>
+                      <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
                         {new Date(fb.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
                     )}

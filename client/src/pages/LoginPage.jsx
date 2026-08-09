@@ -32,7 +32,7 @@ export default function LoginPage() {
   return (
     <div
       className="min-h-screen w-full flex flex-col items-center justify-center px-4 py-10"
-      style={{ background: 'linear-gradient(160deg, #FFF8F0 0%, #FFEEE8 50%, #FFF3E0 100%)' }}
+      style={{ background: 'transparent' }}
     >
       {/* Decorative blobs */}
       <div
@@ -52,8 +52,8 @@ export default function LoginPage() {
         >
           🍱
         </div>
-        <h1 className="text-3xl font-extrabold" style={{ color: '#1C1C1E' }}>MessLoo</h1>
-        <p className="text-sm font-medium" style={{ color: '#6B6B6B' }}>
+        <h1 className="text-3xl font-extrabold" style={{ color: 'var(--text-primary)' }}>MessLoo</h1>
+        <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
           Your VIT-AP mess, reimagined.
         </p>
       </div>
@@ -77,7 +77,7 @@ export default function LoginPage() {
         />
       </div>
 
-      <p className="relative mt-6 text-xs" style={{ color: '#D1C4A8' }}>
+      <p className="relative mt-6 text-xs" style={{ color: 'var(--text-muted)' }}>
         © {new Date().getFullYear()} MessLoo · VIT-AP
       </p>
     </div>

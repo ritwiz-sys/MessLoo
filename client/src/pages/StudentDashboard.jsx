@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useAuth, UserButton } from '@clerk/react'
-import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useUserContext } from '../context/UserContext'
+import { useTheme } from '../hooks/useTheme'
 import MealCard from '../components/MealCard'
 import BottomTabBar from '../components/BottomTabBar'
 
@@ -15,10 +15,17 @@ const MEAL_TIMES = {
   dinner: '7:00 – 9:30 PM',
 }
 
+const MEAL_LABELS = {
+  breakfast: 'Breakfast',
+  lunch: 'Lunch',
+  snacks: 'Evening Snacks',
+  dinner: 'Dinner',
+}
+
 const MENU_TYPES = [
-  { key: 'veg',     label: 'Veg Mess',     dot: '#16a34a' },
-  { key: 'non_veg', label: 'Non-Veg',      dot: '#E23744' },
-  { key: 'special', label: 'Special',      dot: '#F59E0B' },
+  { key: 'veg',     label: 'Veg'      },
+  { key: 'non_veg', label: 'Non-Veg'  },
+  { key: 'special', label: 'Special'  },
 ]
 
 function todayISO() {
@@ -56,7 +63,68 @@ function popPendingFeedback() {
   } catch { return null }
 }
 
-// ── Post-meal feedback sheet ──────────────────────────────────────────────────
+// ── Segmented Control ─────────────────────────────────────────────────────────
+function SegmentedControl({ value, onChange, options }) {
+  const n = options.length
+  const idx = options.findIndex((o) => o.key === value)
+
+  return (
+    <div
+      className="relative flex"
+      style={{
+        background: 'var(--seg-bg)',
+        border: 'var(--seg-border)',
+        borderRadius: 100,
+        padding: 4,
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+      }}
+    >
+      {/* Sliding active pill */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          top: 4,
+          bottom: 4,
+          left: `calc(4px + ${idx} * (100% - 8px) / ${n})`,
+          width: `calc((100% - 8px) / ${n})`,
+          background: 'var(--seg-active-bg)',
+          borderRadius: 100,
+          transition: 'left 0.22s cubic-bezier(0.4,0,0.2,1)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+          pointerEvents: 'none',
+        }}
+      />
+      {options.map((o) => (
+        <button
+          key={o.key}
+          type="button"
+          onClick={() => onChange(o.key)}
+          style={{
+            flex: 1,
+            position: 'relative',
+            zIndex: 1,
+            padding: '9px 8px',
+            borderRadius: 100,
+            fontSize: 13,
+            fontWeight: 700,
+            color: value === o.key ? 'var(--seg-active-text)' : 'var(--seg-inactive-text)',
+            transition: 'color 0.22s',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ── Post-meal feedback modal ───────────────────────────────────────────────────
 function FeedbackModal({ entry, onClose, onSubmit }) {
   const [stars, setStars] = useState(0)
   const [submitting, setSubmitting] = useState(false)
@@ -69,23 +137,57 @@ function FeedbackModal({ entry, onClose, onSubmit }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(15,10,5,0.55)', backdropFilter: 'blur(4px)' }}>
-      <div className="w-full max-w-lg rounded-t-3xl px-6 pt-4 pb-10" style={{ background: '#FFFAF5', borderTop: '1px solid #F0E6D3' }}>
-        <div className="mx-auto w-10 h-1 rounded-full mb-5" style={{ background: '#EEE3D6' }} />
-        <h2 className="text-lg font-black mb-1" style={{ color: '#1C1C1E' }}>How was {entry.mealLabel}?</h2>
-        <p className="text-xs mb-5" style={{ color: '#8B7355' }}>Rate the meal you just had</p>
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }}
+    >
+      <div
+        className="w-full max-w-lg rounded-t-3xl px-6 pt-4 pb-10"
+        style={{
+          background: 'var(--modal-bg)',
+          borderTop: '1px solid var(--modal-border)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+        }}
+      >
+        <div className="mx-auto w-10 h-1 rounded-full mb-5" style={{ background: 'var(--handle-color)' }} />
+        <h2 className="text-lg font-black mb-1" style={{ color: 'var(--text-primary)' }}>
+          How was {entry.mealLabel}?
+        </h2>
+        <p className="text-xs mb-5" style={{ color: 'var(--text-muted)' }}>Rate the meal you just had</p>
         <div className="flex gap-2 mb-1">
-          {[1,2,3,4,5].map((s) => (
-            <button key={s} onClick={() => setStars(s)} className="active:scale-90 transition-transform"
-              style={{ fontSize: 38, lineHeight: 1, color: s <= stars ? '#FFB830' : '#EEE3D6' }}>★</button>
+          {[1, 2, 3, 4, 5].map((s) => (
+            <button
+              key={s}
+              onClick={() => setStars(s)}
+              className="active:scale-90 transition-transform"
+              style={{ fontSize: 38, lineHeight: 1, color: s <= stars ? '#FFB830' : 'var(--handle-color)' }}
+            >
+              ★
+            </button>
           ))}
         </div>
-        <p className="text-sm font-semibold mb-5 min-h-5" style={{ color: '#E23744' }}>{LABELS[stars]}</p>
+        <p className="text-sm font-semibold mb-5 min-h-5" style={{ color: 'var(--error-color)' }}>
+          {LABELS[stars]}
+        </p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 rounded-2xl py-3 text-sm font-semibold" style={{ background: '#F5EDE4', color: '#8B7355' }}>Skip</button>
-          <button onClick={handleSubmit} disabled={submitting}
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-2xl py-3 text-sm font-semibold"
+            style={{ background: 'var(--toggle-bg)', color: 'var(--skip-color)' }}
+          >
+            Skip
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
             className="flex-1 rounded-2xl py-3 text-sm font-black active:scale-95 disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg, #E23744, #C0392B)', color: '#FFF', boxShadow: '0 4px 14px rgba(226,55,68,0.3)' }}>
+            style={{
+              background: 'linear-gradient(135deg, #E23744, #C0392B)',
+              color: '#FFF',
+              boxShadow: '0 4px 14px rgba(226,55,68,0.3)',
+            }}
+          >
             {submitting ? 'Saving…' : 'Submit'}
           </button>
         </div>
@@ -94,30 +196,224 @@ function FeedbackModal({ entry, onClose, onSubmit }) {
   )
 }
 
-// ── Skeleton grid card ────────────────────────────────────────────────────────
+// ── Skeleton card ─────────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
-    <div className="rounded-3xl animate-pulse" style={{ minHeight: 180, background: 'rgba(226,55,68,0.12)' }} />
+    <div
+      className="w-full animate-pulse"
+      style={{
+        height: 88,
+        borderRadius: 20,
+        background: 'var(--card-bg)',
+        backdropFilter: 'var(--card-blur)',
+        WebkitBackdropFilter: 'var(--card-blur)',
+        border: 'var(--card-border)',
+        opacity: 0.5,
+      }}
+    />
+  )
+}
+
+// ── Dashboard AI Chat (bottom sheet) ─────────────────────────────────────────
+const AI_CHIPS = [
+  "What's for lunch?",
+  'Any specials today?',
+  'Which block has better food?',
+  'What time does dinner end?',
+]
+
+function TypingDots() {
+  return (
+    <div className="flex items-center gap-1 px-4 py-3 rounded-2xl"
+      style={{ background: 'var(--dish-odd)', border: '1px solid var(--dish-border)', borderBottomLeftRadius: 6, width: 'fit-content' }}>
+      {[0, 150, 300].map((d) => (
+        <span key={d} className="w-2 h-2 rounded-full animate-bounce"
+          style={{ background: 'var(--text-muted)', animationDelay: `${d}ms` }} />
+      ))}
+    </div>
+  )
+}
+
+function Bubble({ role, content }) {
+  const isUser = role === 'user'
+  return (
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+      <div
+        className="max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
+        style={
+          isUser
+            ? { background: 'linear-gradient(135deg,#7C3AED,#4F46E5)', color: '#FFF', borderBottomRightRadius: 6, boxShadow: '0 2px 10px rgba(124,58,237,0.25)' }
+            : { background: 'var(--dish-odd)', color: 'var(--dish-text)', border: '1px solid var(--dish-border)', borderBottomLeftRadius: 6 }
+        }
+      >
+        {content}
+      </div>
+    </div>
+  )
+}
+
+function DashboardAiChat({ onClose, getToken }) {
+  const [messages, setMessages] = useState([
+    { role: 'assistant', content: 'Hey! 👋 Ask me anything about the mess — menu, timings, specials, or which block has better food!' },
+  ])
+  const [input, setInput] = useState('')
+  const [thinking, setThinking] = useState(false)
+  const bottomRef = useRef(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, thinking])
+
+  const send = async (question) => {
+    const q = (question || input).trim()
+    if (!q || thinking) return
+    setInput('')
+    setMessages((m) => [...m, { role: 'user', content: q }])
+    setThinking(true)
+    try {
+      const token = await getToken()
+      const res = await api.askChat(token, q)
+      setMessages((m) => [...m, { role: 'assistant', content: res?.answer || res?.reply || "I couldn't get a response. Try again!" }])
+    } catch {
+      setMessages((m) => [...m, { role: 'assistant', content: 'Mess AI is offline right now. Try again in a moment!' }])
+    } finally {
+      setThinking(false)
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col justify-end"
+      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        className="w-full max-w-lg mx-auto flex flex-col"
+        style={{
+          maxHeight: '88vh',
+          background: 'var(--modal-bg)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderTop: '1px solid var(--modal-border)',
+          borderRadius: '28px 28px 0 0',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg,#7C3AED,#4F46E5)', boxShadow: '0 4px 12px rgba(124,58,237,0.35)' }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="rgba(255,255,255,0.15)" />
+                <circle cx="9.5" cy="9.5" r="1.2" fill="white" />
+                <circle cx="14.5" cy="9.5" r="1.2" fill="white" />
+                <path d="M9 14.5c0 0 .8 1.5 3 1.5s3-1.5 3-1.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M12 2v1.5M12 20.5V22M2 12h1.5M20.5 12H22" stroke="rgba(255,255,255,0.55)" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-[15px] font-black leading-tight" style={{ color: 'var(--text-primary)' }}>Mess AI</p>
+              <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Ask anything about your mess</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90"
+            style={{ background: 'var(--toggle-bg)', color: 'var(--text-muted)' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: 'var(--dish-border)', margin: '0 20px' }} />
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
+          {messages.map((m, i) => <Bubble key={i} role={m.role} content={m.content} />)}
+          {thinking && <TypingDots />}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Suggestion chips (only on first open) */}
+        {messages.length <= 1 && !thinking && (
+          <div className="px-5 pb-2 flex gap-2 overflow-x-auto no-scrollbar">
+            {AI_CHIPS.map((c) => (
+              <button
+                key={c}
+                onClick={() => send(c)}
+                className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full transition-all active:scale-95"
+                style={{ background: 'var(--pill-bg)', color: 'var(--pill-color)', border: '1px solid var(--pill-border)', whiteSpace: 'nowrap' }}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Input bar — padded above floating pill nav */}
+        <div
+          className="px-5 shrink-0"
+          style={{ paddingBottom: 'max(96px, calc(env(safe-area-inset-bottom, 0px) + 88px))' }}
+        >
+          <div
+            className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+            style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)' }}
+          >
+            <input
+              type="text"
+              value={input}
+              autoFocus
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && send()}
+              placeholder="Ask about today's menu…"
+              className="flex-1 text-sm bg-transparent outline-none"
+              style={{ color: 'var(--text-primary)' }}
+            />
+            <button
+              onClick={() => send()}
+              disabled={!input.trim() || thinking}
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-90 disabled:opacity-40"
+              style={{ background: 'linear-gradient(135deg,#7C3AED,#4F46E5)', boxShadow: '0 3px 10px rgba(124,58,237,0.35)' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function StudentDashboard() {
   const { getToken } = useAuth()
-  const navigate = useNavigate()
-  const { profile, blockCategory, blockName, cateringCompany, loading: profileLoading, error: profileError } = useUserContext()
-  const [menus, setMenus]           = useState([])
-  const [attendanceMap, setAttendanceMap] = useState({})
-  const [loading, setLoading]       = useState(true)
-  const [error, setError]           = useState(null)
-  const [offline, setOffline]       = useState(false)
+  const { theme, toggle: toggleTheme } = useTheme()
+  const {
+    profile, blockCategory, blockName, cateringCompany,
+    loading: profileLoading, error: profileError,
+  } = useUserContext()
+
+  const [menus, setMenus]                     = useState([])
+  const [attendanceMap, setAttendanceMap]     = useState({})
+  const [loading, setLoading]                 = useState(true)
+  const [error, setError]                     = useState(null)
+  const [offline, setOffline]                 = useState(false)
   const [pendingFeedback, setPendingFeedback] = useState(null)
-  const [menuType, setMenuType]     = useState('veg')
+  const [menuType, setMenuType]               = useState('veg')
+  const [showAiChat, setShowAiChat]           = useState(false)
 
   const date     = useMemo(() => todayISO(), [])
   const nextMeal = getNextMeal()
 
-  // ── Cache helpers ──
+  // ── Cache helpers ──────────────────────────────────────────────────────────
   const cacheKey = useCallback(
     (bc, mt) => `messloo_menus_${date}_${bc}_${mt}`,
     [date]
@@ -129,7 +425,7 @@ export default function StudentDashboard() {
     try { return JSON.parse(localStorage.getItem(cacheKey(bc, mt)) || 'null') } catch { return null }
   }, [cacheKey])
 
-  // Save user info to localStorage so OfflineFallback can show it without Clerk
+  // Save user info for offline fallback
   useEffect(() => {
     if (blockCategory) localStorage.setItem('messloo_user_block', blockCategory)
     if (profile?.name) localStorage.setItem('messloo_user_name', profile.name)
@@ -155,16 +451,15 @@ export default function StudentDashboard() {
     if (profileLoading || !blockCategory) { if (!profileLoading) setLoading(false); return }
     let cancelled = false
 
-    // Load from cache first — show immediately, no skeleton
     const cached = loadFromCache(blockCategory, menuType)
     const hasCache = Boolean(cached?.length)
     if (hasCache) {
       setMenus(cached)
-      setOffline(true)   // assume offline until fresh fetch succeeds
+      setOffline(true)
       setLoading(false)
     } else {
       setMenus([])
-      setLoading(true)   // only show skeleton when there's nothing to show
+      setLoading(true)
     }
     setAttendanceMap({})
     setError(null)
@@ -172,7 +467,6 @@ export default function StudentDashboard() {
     const load = async () => {
       try {
         const token = await getToken()
-        // Wrap the API call with a 8-second timeout so offline fails fast
         const res = await Promise.race([
           api.getMenus(token, { date, block_category: blockCategory, menu_type: menuType }),
           new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
@@ -190,7 +484,6 @@ export default function StudentDashboard() {
       } catch {
         if (!cancelled) {
           if (hasCache) {
-            // Already showing cached data — just keep offline badge, do nothing else
             setOffline(true)
           } else {
             setError('No internet and no cached menu for today.')
@@ -231,168 +524,211 @@ export default function StudentDashboard() {
     }).catch(() => {})
   }
 
-  const formattedDate = useMemo(
-    () => new Date(`${date}T00:00:00`).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }),
-    [date]
-  )
   const firstName = profile?.name?.split(' ')[0] || null
-  const activeMenuType = MENU_TYPES.find((t) => t.key === menuType)
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#FFF4EC' }}>
+    <div className="min-h-screen" style={{ background: 'transparent' }}>
 
       {pendingFeedback && (
-        <FeedbackModal entry={pendingFeedback} onClose={() => setPendingFeedback(null)} onSubmit={handlePostMealFeedback} />
+        <FeedbackModal
+          entry={pendingFeedback}
+          onClose={() => setPendingFeedback(null)}
+          onSubmit={handlePostMealFeedback}
+        />
       )}
 
-      {/* ── Background blobs ── */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
-        <div style={{
-          position: 'absolute', top: -120, right: -80, width: 340, height: 340, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(235,51,73,0.18) 0%, transparent 70%)',
-        }} />
-        <div style={{
-          position: 'absolute', top: 80, left: -100, width: 280, height: 280, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(247,151,30,0.16) 0%, transparent 70%)',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: 180, right: -60, width: 240, height: 240, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,94,98,0.13) 0%, transparent 70%)',
-        }} />
-      </div>
+      {showAiChat && (
+        <DashboardAiChat onClose={() => setShowAiChat(false)} getToken={getToken} />
+      )}
 
       {/* ── Header ── */}
-      <header className="relative z-10 px-5 pt-12 pb-3 max-w-lg mx-auto w-full">
-        {/* Top row: greeting + avatar */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-xs font-bold tracking-widest uppercase" style={{ color: '#B08040' }}>
+      <header className="px-5 pb-3 max-w-lg mx-auto w-full" style={{ paddingTop: 'max(56px, calc(env(safe-area-inset-top, 0px) + 16px))' }}>
+
+        {/* Top row: greeting/name | controls */}
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <p
+              className="text-[11px] font-bold tracking-[0.14em] uppercase"
+              style={{ color: 'var(--greeting-color)' }}
+            >
               {getGreeting()}
             </p>
-            <h1 className="text-2xl font-black mt-0.5 tracking-tight" style={{ color: '#1C1C1E' }}>
+            <h1
+              className="mt-0.5 leading-none truncate"
+              style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}
+            >
               {firstName ?? 'MessLoo'}
             </h1>
-            {blockName && (
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#E23744' }} />
-                <span className="text-xs font-semibold" style={{ color: '#8B7355' }}>
-                  {blockName}{cateringCompany ? ` · ${cateringCompany}` : ''}
-                </span>
-              </div>
-            )}
           </div>
-          <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-10 h-10' } }} />
+
+          {/* Theme toggle + avatar */}
+          <div className="flex items-center gap-2 ml-3 mt-0.5">
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
+              style={{
+                background: 'var(--toggle-bg)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                border: 'var(--card-border)',
+                fontSize: 17,
+              }}
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
+            <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-9 h-9' } }} />
+          </div>
         </div>
 
-        {/* Next meal pill */}
-        {nextMeal && (
-          <div className="flex items-center gap-2 mb-4">
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold"
-              style={{ background: 'rgba(235,51,73,0.1)', color: '#E23744', border: '1px solid rgba(235,51,73,0.2)' }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#E23744' }} />
-              Next · {nextMeal.charAt(0).toUpperCase() + nextMeal.slice(1)} · {MEAL_TIMES[nextMeal]}
-            </span>
+        {/* Block + next meal pills */}
+        {(blockName || nextMeal) && (
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
+            {blockName && (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold"
+                style={{
+                  background: 'var(--card-bg)',
+                  backdropFilter: 'var(--card-blur)',
+                  WebkitBackdropFilter: 'var(--card-blur)',
+                  border: 'var(--card-border)',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                🏠 {blockName}{cateringCompany ? ` · ${cateringCompany}` : ''}
+              </span>
+            )}
+            {nextMeal && (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold"
+                style={{
+                  background: 'var(--pill-bg)',
+                  color: 'var(--pill-color)',
+                  border: `1px solid var(--pill-border)`,
+                }}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ background: 'var(--pill-color)' }}
+                />
+                {MEAL_LABELS[nextMeal]} · {MEAL_TIMES[nextMeal]}
+              </span>
+            )}
           </div>
         )}
 
-        {/* Menu type toggle (pill bar) */}
-        <div className="flex gap-2 mb-1">
-          {MENU_TYPES.map(({ key, label, dot }) => {
-            const active = menuType === key
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setMenuType(key)}
-                className="rounded-full px-4 py-2 text-xs font-bold transition-all active:scale-95"
-                style={active
-                  ? { background: '#1C1C1E', color: '#FFF', boxShadow: '0 4px 12px rgba(28,28,30,0.25)' }
-                  : { background: 'rgba(255,255,255,0.75)', color: '#8B7355', border: '1px solid rgba(240,230,211,0.8)' }
-                }
-              >
-                {active && <span className="mr-1.5 inline-block w-1.5 h-1.5 rounded-full" style={{ background: dot, verticalAlign: 'middle' }} />}
-                {label}
-              </button>
-            )
-          })}
+        {/* Segmented control */}
+        <div className="mt-4">
+          <SegmentedControl value={menuType} onChange={setMenuType} options={MENU_TYPES} />
         </div>
       </header>
 
-      {/* ── Section header ── */}
-      <div className="relative z-10 px-5 pb-2 max-w-lg mx-auto w-full">
+      {/* ── Section title ── */}
+      <div className="px-5 pb-2 max-w-lg mx-auto w-full">
         <div className="flex items-center gap-2">
-          <h2 className="text-base font-black" style={{ color: '#1C1C1E' }}>
-            Today's Menu
-            <span className="ml-2 text-xs font-semibold" style={{ color: '#B08040' }}>
-              {activeMenuType?.label}
-            </span>
+          <h2 className="text-[15px] font-black" style={{ color: 'var(--text-primary)' }}>
+            Today&#39;s Menu
           </h2>
-          {offline && (
-            <span
-              className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(247,151,30,0.15)', color: '#D97706', border: '1px solid rgba(247,151,30,0.3)' }}
-            >
-              Cached
-            </span>
-          )}
         </div>
       </div>
 
-      {/* ── Errors ── */}
+      {/* ── Error banners ── */}
       {(profileError || error) && (
-        <div className="relative z-10 mx-5 max-w-lg mb-3 rounded-2xl p-3 text-sm font-medium"
-          style={{ background: 'rgba(226,55,68,0.08)', color: '#E23744', border: '1px solid rgba(226,55,68,0.2)' }}>
+        <div
+          className="mx-5 max-w-lg mb-3 rounded-2xl p-3 text-sm font-medium"
+          style={{
+            background: 'var(--error-bg)',
+            color: 'var(--error-color)',
+            border: `1px solid var(--error-border)`,
+          }}
+        >
           {profileError || error}
         </div>
       )}
 
-      {/* ── 2-column meal grid ── */}
-      <main className="relative z-10 flex-1 px-5 pb-28 max-w-lg mx-auto w-full">
-        <div className="grid grid-cols-2 gap-3 mt-2">
+      {/* ── Meal cards (single column) ── */}
+      <main className="px-5 pb-28 max-w-lg mx-auto w-full">
+        <div className="flex flex-col gap-3 mt-1">
           {profileLoading || loading
             ? MEAL_ORDER.map((m) => <SkeletonCard key={m} />)
-            : MEAL_ORDER.map((mealType) => {
-                const menuItem = menuByMeal[mealType]
+            : MEAL_ORDER.map((mt) => {
+                const menuItem = menuByMeal[mt]
                 return (
                   <MealCard
-                    key={mealType}
-                    mealType={mealType}
+                    key={mt}
+                    mealType={mt}
                     menuItem={menuItem}
                     attendance={menuItem ? attendanceMap[menuItem.id] : null}
                     onMarkAttendance={handleMarkAttendance}
                     onSubmitFeedback={handleSubmitFeedback}
+                    getToken={getToken}
+                    offline={offline}
                   />
                 )
               })
           }
-        </div>
 
-        {/* Chat CTA card */}
-        <button
-          onClick={() => navigate('/chat')}
-          className="w-full mt-4 flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left transition-all active:scale-[0.98]"
-          style={{
-            background: 'rgba(255,255,255,0.75)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255,255,255,0.9)',
-            boxShadow: '0 2px 16px rgba(180,80,40,0.08)',
-          }}
-        >
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-sm font-black"
-            style={{ background: 'linear-gradient(135deg, #F7971E, #FFD200)', color: '#3D2C1E' }}
+          {/* ── Ask Mess AI banner card ── */}
+          <button
+            type="button"
+            onClick={() => setShowAiChat(true)}
+            className="w-full text-left transition-all active:scale-[0.98] relative overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, #6D28D9 0%, #4F46E5 60%, #7C3AED 100%)',
+              borderRadius: 20,
+              padding: '20px 20px 20px 22px',
+              minHeight: 110,
+              boxShadow: '0 8px 28px rgba(99,58,237,0.38)',
+            }}
           >
-            AI
-          </div>
-          <div>
-            <p className="text-sm font-black" style={{ color: '#1C1C1E' }}>Ask Mess AI</p>
-            <p className="text-xs" style={{ color: '#8B7355' }}>What's for dinner? Any specials today?</p>
-          </div>
-          <span className="ml-auto text-lg font-light" style={{ color: '#E2B89A' }}>›</span>
-        </button>
+            {/* Subtle background circles for depth */}
+            <div style={{
+              position: 'absolute', top: -24, right: 64, width: 110, height: 110,
+              borderRadius: '50%', background: 'rgba(255,255,255,0.07)', pointerEvents: 'none',
+            }} />
+            <div style={{
+              position: 'absolute', bottom: -30, right: 20, width: 90, height: 90,
+              borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none',
+            }} />
+
+            {/* Left: text + CTA */}
+            <div style={{ maxWidth: '62%', position: 'relative', zIndex: 1 }}>
+              <p style={{
+                fontSize: 17, fontWeight: 900, color: '#FFFFFF',
+                lineHeight: 1.25, letterSpacing: '-0.01em', marginBottom: 6,
+              }}>
+                Something Fresh Every Meal 🍽️
+              </p>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', marginBottom: 14, lineHeight: 1.4 }}>
+                Ask me about today's menu, specials, timings, and more.
+              </p>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                background: '#FFFFFF', borderRadius: 100,
+                padding: '6px 14px',
+                fontSize: 12, fontWeight: 800, color: '#4F46E5',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              }}>
+                Ask Now
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 12H19M13 6L19 12L13 18" stroke="#4F46E5" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Right: floating emoji illustration */}
+            <div style={{
+              position: 'absolute', right: 14, top: '50%',
+              transform: 'translateY(-50%)',
+              fontSize: 72, lineHeight: 1,
+              filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.25))',
+              userSelect: 'none', pointerEvents: 'none',
+              zIndex: 1,
+            }}>
+              🤖
+            </div>
+          </button>
+        </div>
       </main>
 
       <BottomTabBar />

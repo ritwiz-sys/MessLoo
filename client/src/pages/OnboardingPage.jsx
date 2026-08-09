@@ -83,7 +83,7 @@ function WarmBlockPicker({ onSelect }) {
                     >
                       <span className="text-sm font-bold">{block.name || block.block_name}</span>
                       {block.catering_company && (
-                        <span className="text-[10px] font-medium mt-0.5" style={{ color: active ? '#E23744' : '#6B6B6B', opacity: 0.7 }}>
+                        <span className="text-[10px] font-medium mt-0.5" style={{ color: active ? '#E23744' : 'var(--text-muted)', opacity: 0.8 }}>
                           {block.catering_company}
                         </span>
                       )}
@@ -97,7 +97,7 @@ function WarmBlockPicker({ onSelect }) {
       )}
 
       {selectedBlock && (
-        <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: '#6B6B6B' }}>
+        <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
           <span>🏠</span>
           <span>{selectedBlock.name} · {selectedBlock.catering_company || 'Unknown caterer'}</span>
         </div>
@@ -178,7 +178,7 @@ export default function OnboardingPage() {
       content: (
         <div className="flex flex-col gap-4">
           <div>
-            <label className="block text-sm font-semibold mb-1.5" style={{ color: '#1C1C1E' }}>Your name</label>
+            <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--text-primary)' }}>Your name</label>
             <input
               type="text"
               value={name}
@@ -186,16 +186,16 @@ export default function OnboardingPage() {
               placeholder="e.g. Ritwiz Kumar"
               className="w-full rounded-2xl text-sm px-4 py-3 outline-none transition-all"
               style={{
-                background: '#FAFAFA',
-                border: '1px solid #F0E6D3',
-                color: '#1C1C1E',
+                background: 'var(--input-bg)',
+                border: '1px solid var(--input-border)',
+                color: 'var(--text-primary)',
               }}
               onFocus={(e) => (e.target.style.borderColor = '#E23744')}
-              onBlur={(e) => (e.target.style.borderColor = '#F0E6D3')}
+              onBlur={(e) => (e.target.style.borderColor = 'var(--input-border)')}
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold mb-1.5" style={{ color: '#1C1C1E' }}>College ID <span style={{ color: '#D1C4A8' }}>(optional)</span></label>
+            <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--text-primary)' }}>College ID <span style={{ color: 'var(--text-muted)' }}>(optional)</span></label>
             <input
               type="text"
               value={collegeId}
@@ -203,12 +203,12 @@ export default function OnboardingPage() {
               placeholder="e.g. 22BCE1234"
               className="w-full rounded-2xl text-sm px-4 py-3 outline-none transition-all"
               style={{
-                background: '#FAFAFA',
-                border: '1px solid #F0E6D3',
-                color: '#1C1C1E',
+                background: 'var(--input-bg)',
+                border: '1px solid var(--input-border)',
+                color: 'var(--text-primary)',
               }}
               onFocus={(e) => (e.target.style.borderColor = '#E23744')}
-              onBlur={(e) => (e.target.style.borderColor = '#F0E6D3')}
+              onBlur={(e) => (e.target.style.borderColor = 'var(--input-border)')}
             />
           </div>
           <button
@@ -235,7 +235,7 @@ export default function OnboardingPage() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center px-4 py-10"
-      style={{ background: 'linear-gradient(160deg, #FFF8F0 0%, #FFEEE8 50%, #FFF3E0 100%)' }}
+      style={{ background: 'transparent' }}
     >
       {/* Decorative blob */}
       <div
@@ -249,14 +249,16 @@ export default function OnboardingPage() {
         <div
           className="rounded-3xl p-6"
           style={{
-            background: '#FFFFFF',
-            border: '1px solid #F0E6D3',
-            boxShadow: '0 8px 40px rgba(226,55,68,0.1)',
+            background: 'var(--modal-bg)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid var(--modal-border)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
           }}
         >
           <div className="text-4xl mb-3">{current.emoji}</div>
-          <h1 className="text-xl font-extrabold mb-1" style={{ color: '#1C1C1E' }}>{current.heading}</h1>
-          <p className="text-sm mb-5" style={{ color: '#6B6B6B' }}>{current.sub}</p>
+          <h1 className="text-xl font-extrabold mb-1" style={{ color: 'var(--text-primary)' }}>{current.heading}</h1>
+          <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>{current.sub}</p>
           {current.content}
         </div>
       </div>

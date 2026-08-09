@@ -2,47 +2,34 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 function HomeIcon({ active }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
       <path
         d="M3 9.5L12 3L21 9.5V20C21 20.5523 20.5523 21 20 21H15V15H9V21H4C3.44772 21 3 20.5523 3 20V9.5Z"
-        fill={active ? '#E23744' : 'none'}
-        stroke={active ? '#E23744' : '#6B6B6B'}
+        fill={active ? 'currentColor' : 'none'}
+        stroke="currentColor"
         strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
+        style={{ opacity: active ? 0.9 : 1 }}
       />
-    </svg>
-  )
-}
-
-function ChatIcon({ active }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M12 3C7.02944 3 3 6.68629 3 11.25C3 13.1714 3.70711 14.9286 4.90625 16.3125L3.375 21L8.0625 19.5C9.22656 20.1563 10.5703 20.5 12 20.5C16.9706 20.5 21 16.8137 21 12.25C21 7.68629 16.9706 4 12 4"
-        fill={active ? '#FFE8EA' : 'none'}
-        stroke={active ? '#E23744' : '#6B6B6B'}
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M8 11H16M8 15H13" stroke={active ? '#E23744' : '#6B6B6B'} strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   )
 }
 
 function ProfileIcon({ active }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
       <circle
         cx="12" cy="8" r="4"
-        fill={active ? '#FFE8EA' : 'none'}
-        stroke={active ? '#E23744' : '#6B6B6B'}
+        fill={active ? 'currentColor' : 'none'}
+        stroke="currentColor"
         strokeWidth="1.8"
+        style={{ opacity: active ? 0.25 : 1 }}
       />
+      <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" strokeWidth="1.8" />
       <path
         d="M4 20C4 17.2386 7.58172 15 12 15C16.4183 15 20 17.2386 20 20"
-        stroke={active ? '#E23744' : '#6B6B6B'}
+        stroke="currentColor"
         strokeWidth="1.8"
         strokeLinecap="round"
       />
@@ -51,7 +38,7 @@ function ProfileIcon({ active }) {
 }
 
 const TABS = [
-  { path: '/dashboard', label: 'Menu',    Icon: HomeIcon },
+  { path: '/dashboard', label: 'Home',    Icon: HomeIcon    },
   { path: '/profile',   label: 'Profile', Icon: ProfileIcon },
 ]
 
@@ -61,40 +48,55 @@ export default function BottomTabBar() {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-50 flex justify-center"
-      style={{ backgroundColor: 'transparent' }}
+      className="fixed left-0 right-0 z-50 flex justify-center pointer-events-none"
+      style={{ bottom: 'max(20px, calc(env(safe-area-inset-bottom, 0px) + 12px))' }}
     >
       <nav
-        className="w-full max-w-lg"
+        className="pointer-events-auto"
         style={{
-          background: 'rgba(255,244,236,0.94)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          borderTop: '1px solid rgba(235,51,73,0.1)',
-          boxShadow: '0 -4px 24px rgba(235,51,73,0.06)',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          /* Floating pill shape */
+          display: 'flex',
+          alignItems: 'center',
+          borderRadius: 100,
+          paddingLeft: 8,
+          paddingRight: 8,
+          paddingTop: 6,
+          paddingBottom: 6,
+          gap: 4,
+
+          /* Frosted glass */
+          background: 'var(--bottom-bar-bg)',
+          backdropFilter: 'blur(28px)',
+          WebkitBackdropFilter: 'blur(28px)',
+          border: '1px solid var(--bottom-bar-border)',
+
+          /* Hover shadow — makes it float */
+          boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)',
         }}
       >
-        <div className="flex items-center">
-          {TABS.map(({ path, label, Icon }) => {
-            const active = location.pathname === path
-            return (
-              <button
-                key={path}
-                onClick={() => navigate(path)}
-                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 transition-all"
-              >
-                <Icon active={active} />
-                <span
-                  className="text-[10px] font-semibold tracking-wide"
-                  style={{ color: active ? '#E23744' : '#6B6B6B' }}
-                >
-                  {label}
-                </span>
-              </button>
-            )
-          })}
-        </div>
+        {TABS.map(({ path, label, Icon }) => {
+          const active = location.pathname === path
+          return (
+            <button
+              key={path}
+              onClick={() => navigate(path)}
+              className="flex flex-col items-center justify-center gap-0.5 transition-all active:scale-90"
+              style={{
+                color: active ? 'var(--tab-active)' : 'var(--tab-inactive)',
+                borderRadius: 80,
+                padding: '8px 28px',
+                /* Active pill highlight */
+                background: active ? 'var(--tab-active-bg, rgba(226,55,68,0.10))' : 'transparent',
+                minWidth: 80,
+              }}
+            >
+              <Icon active={active} />
+              <span className="text-[10px] font-bold tracking-wide">
+                {label}
+              </span>
+            </button>
+          )
+        })}
       </nav>
     </div>
   )

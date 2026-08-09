@@ -1,4 +1,4 @@
-const CACHE = 'messloo-v5'
+const CACHE = 'messloo-v6'
 
 // ─── Standalone offline page ───────────────────────────────────────────────────
 // KEY RULE for this template literal:
@@ -16,176 +16,221 @@ const OFFLINE_PAGE = `<!doctype html>
   <title>MessLoo</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{background:#FFF4EC;font-family:system-ui,sans-serif;min-height:100dvh;padding-bottom:80px}
-    .wrap{max-width:512px;margin:0 auto;padding:52px 20px 0}
-    .badge{font-size:11px;font-weight:700;padding:6px 12px;border-radius:20px;background:rgba(247,151,30,.15);color:#D97706;border:1px solid rgba(247,151,30,.4);white-space:nowrap}
-    .badge-sm{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(247,151,30,.15);color:#D97706;border:1px solid rgba(247,151,30,.3)}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
-    .card{position:relative;overflow:hidden;border-radius:24px;min-height:180px;padding:16px 16px 52px;transition:transform .15s;-webkit-tap-highlight-color:transparent}
-    .card.clickable{cursor:pointer}
-    .card.clickable:active{transform:scale(.95)}
-    .card-time{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:4px}
-    .card-title{font-size:16px;font-weight:900;color:#fff;margin-bottom:10px;line-height:1.2}
-    .card-preview{font-size:11px;font-weight:600;color:rgba(255,255,255,.85);line-height:1.5}
-    .card-empty{font-size:11px;font-style:italic;color:rgba(255,255,255,.5)}
-    .card-footer{position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:8px 12px 12px;background:linear-gradient(to top,rgba(0,0,0,.18),transparent)}
-    .card-arrow{width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
-    .card-count{font-size:10px;font-weight:900;padding:4px 10px;border-radius:20px;background:rgba(0,0,0,.25);color:#fff}
-    .deco1{position:absolute;bottom:-32px;right:-32px;width:112px;height:112px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
-    .deco2{position:absolute;bottom:-12px;right:-12px;width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
-    .hint{font-size:11px;color:#C4A882;text-align:center;margin-top:28px}
-    #overlay{display:none;position:fixed;inset:0;background:rgba(15,10,5,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:50}
-    #sheet{display:none;position:fixed;bottom:0;left:0;right:0;max-width:512px;margin:0 auto;border-radius:24px 24px 0 0;background:#FFFAF5;overflow:hidden;z-index:51}
-    .sheet-inner{padding:20px 24px 40px}
-    .handle{width:40px;height:4px;border-radius:2px;background:#EEE3D6;margin:0 auto 20px}
-    .dish-row{display:flex;align-items:center;gap:12px;padding:12px 16px}
-    .dish-dot{width:6px;height:6px;border-radius:50%;background:#E23744;flex-shrink:0}
-    .dish-name{font-size:14px;font-weight:500;color:#3D2C1E}
-    .close-btn{width:100%;margin-top:16px;padding:14px;border-radius:16px;background:#FFF6EE;color:#8B7355;font-size:14px;font-weight:700;border:1px solid #F0E6D3;cursor:pointer}
+    html{min-height:100%}
+    html::before{content:'';position:fixed;inset:0;background:linear-gradient(135deg,#FFB5B5 0%,#B5E8C8 40%,#F5E87A 75%,#FFFFFF 100%);z-index:-1;pointer-events:none}
+    body{font-family:system-ui,sans-serif;min-height:100dvh;background:transparent;-webkit-font-smoothing:antialiased;padding-bottom:max(112px,calc(env(safe-area-inset-bottom,0px) + 104px))}
+    .wrap{max-width:512px;margin:0 auto;padding:max(56px,calc(env(safe-area-inset-top,0px) + 16px)) 20px 0}
+    .greeting{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8B8B8B}
+    .uname{font-size:32px;font-weight:800;color:#1C1C1E;letter-spacing:-.01em;margin-top:2px;line-height:1}
+    .block-pill{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:6px 12px;border-radius:100px;background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.6);font-size:11px;font-weight:700;color:#555}
+    /* segmented */
+    .seg{position:relative;display:flex;background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.6);border-radius:100px;padding:4px;margin-top:16px}
+    .seg-pill{position:absolute;top:4px;bottom:4px;border-radius:100px;background:#E23744;box-shadow:0 2px 8px rgba(0,0,0,.18);transition:left .22s cubic-bezier(.4,0,.2,1);pointer-events:none}
+    .seg button{flex:1;position:relative;z-index:1;padding:9px 8px;border-radius:100px;font-size:13px;font-weight:700;border:none;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color .22s}
+    .seg button.active{color:#fff}
+    .seg button:not(.active){color:#666}
+    /* section */
+    .sec-title{font-size:15px;font-weight:900;color:#1C1C1E;margin:16px 0 8px}
+    /* meal card */
+    .card{width:100%;border-radius:20px;overflow:hidden;background:rgba(255,255,255,.45);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.6);box-shadow:0 4px 24px rgba(0,0,0,.08);margin-bottom:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s;display:block}
+    .card:active{transform:scale(.98)}
+    .banner{position:relative;overflow:hidden;min-height:92px;display:flex;align-items:center}
+    .b-img{position:absolute;inset:0;background-size:cover;background-position:right center;opacity:.7}
+    .b-fade{position:absolute;inset:0;pointer-events:none}
+    .b-wash{position:absolute;inset:0;opacity:.42;pointer-events:none}
+    .b-text{position:relative;z-index:1;padding:14px 16px;flex:0 0 58%;max-width:58%}
+    .b-name{font-size:18px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-.01em;margin-bottom:3px}
+    .b-time{font-size:11px;color:rgba(255,255,255,.75)}
+    .dishes{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px 13px 16px}
+    .dish-txt{font-size:13px;font-weight:500;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+    .more-pill{display:inline-block;margin-top:5px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px;background:rgba(226,55,68,.1);color:#E23744;border:1px solid rgba(226,55,68,.2)}
+    .arrow{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+    .no-menu{font-size:12px;font-style:italic;color:#8B8B8B}
+    /* bottom pill nav */
+    .bottom-bar{position:fixed;left:0;right:0;display:flex;justify-content:center;pointer-events:none;z-index:50;bottom:max(20px,calc(env(safe-area-inset-bottom,0px) + 12px))}
+    .pill-nav{pointer-events:auto;display:flex;align-items:center;border-radius:100px;padding:6px 8px;gap:4px;background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(28px);backdrop-filter:blur(28px);border:1px solid rgba(0,0,0,.06);box-shadow:0 8px 32px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.1)}
+    .tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:80px;padding:8px 28px;min-width:80px;border:none;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .15s;color:#999}
+    .tab.active{background:rgba(226,55,68,.1);color:#E23744}
+    .tab span{font-size:10px;font-weight:700;letter-spacing:.04em}
+    /* modal overlay */
+    #overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);z-index:50}
+    #sheet{display:none;position:fixed;bottom:0;left:0;right:0;max-width:512px;margin:0 auto;border-radius:24px 24px 0 0;background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,.8);z-index:51;overflow:hidden}
   </style>
 </head>
 <body>
 <div id="overlay"></div>
-<div id="sheet">
-  <div id="sheet-accent" style="height:4px"></div>
-  <div class="sheet-inner">
-    <div class="handle"></div>
-    <h2 id="sheet-title" style="font-size:20px;font-weight:900;color:#1C1C1E"></h2>
-    <p id="sheet-time" style="font-size:12px;font-weight:500;color:#8B7355;margin-top:3px;margin-bottom:20px"></p>
-    <div id="sheet-dishes" style="border:1px solid #F0E6D3;border-radius:16px;overflow:hidden"></div>
-    <p id="sheet-empty" style="display:none;font-size:13px;color:#8B7355;text-align:center;margin-top:8px">No items listed</p>
-    <button id="close-btn" class="close-btn">Close</button>
-  </div>
-</div>
+<div id="sheet"></div>
 <div class="wrap" id="app"></div>
+<div class="bottom-bar">
+  <nav class="pill-nav">
+    <button class="tab active">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M3 9.5L12 3L21 9.5V20C21 20.5523 20.5523 21 20 21H15V15H9V21H4C3.44772 21 3 20.5523 3 20V9.5Z" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="opacity:.9"/>
+      </svg>
+      <span>Home</span>
+    </button>
+    <button class="tab">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M4 20C4 17.2386 7.58172 15 12 15C16.4183 15 20 17.2386 20 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <span>Profile</span>
+    </button>
+  </nav>
+</div>
 
 <script>
 (function() {
   var ORDER  = ['breakfast','lunch','snacks','dinner'];
   var LABELS = {breakfast:'Breakfast',lunch:'Lunch',snacks:'Evening Snacks',dinner:'Dinner'};
+  var EMOJIS = {breakfast:'☀️',lunch:'🍛',snacks:'🧆',dinner:'🌙'};
   var TIMES  = {breakfast:'7:30 – 9:00 AM',lunch:'12:00 – 2:00 PM',snacks:'4:00 – 5:30 PM',dinner:'7:00 – 9:30 PM'};
-  var GRADS  = {
-    breakfast:'linear-gradient(145deg,#FF9966,#FF5E62)',
-    lunch:    'linear-gradient(145deg,#EB3349,#F45C43)',
-    snacks:   'linear-gradient(145deg,#F7971E,#FFD200)',
-    dinner:   'linear-gradient(145deg,#C94B4B,#8B0000)'
-  };
+  var GRADS  = {breakfast:'linear-gradient(145deg,#FF9966,#FF5E62)',lunch:'linear-gradient(145deg,#EB3349,#F45C43)',snacks:'linear-gradient(145deg,#F7971E,#FFD200)',dinner:'linear-gradient(145deg,#C94B4B,#8B0000)'};
+  var FADES  = {breakfast:'#FF7040',lunch:'#E83040',snacks:'#F79A1E',dinner:'#A03030'};
+  var DOTS   = {breakfast:'#FF7A7A',lunch:'#EB3349',snacks:'#F7971E',dinner:'#C94B4B'};
+  var SHADS  = {breakfast:'rgba(255,94,98,.4)',lunch:'rgba(235,51,73,.4)',snacks:'rgba(247,151,30,.4)',dinner:'rgba(201,75,75,.4)'};
+  var IMGS   = {breakfast:'/breakfast.jpg',lunch:'/lunch.jpg',snacks:'/snacks.jpg',dinner:'/dinner.jpg'};
+  var TYPES  = [{key:'veg',label:'Veg'},{key:'non_veg',label:'Non-Veg'},{key:'special',label:'Special'}];
 
   function todayISO() {
-    var now = new Date(), local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-    return local.toISOString().slice(0, 10);
+    var n=new Date(),l=new Date(n.getTime()-n.getTimezoneOffset()*60000);
+    return l.toISOString().slice(0,10);
   }
   function greeting() {
-    var h = new Date().getHours();
-    return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    var h=new Date().getHours();
+    return h<12?'Good morning':h<17?'Good afternoon':'Good evening';
   }
-  function getCached(k) {
-    try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e) { return null; }
-  }
+  function getCached(k) { try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;} }
   function splitDishes(s) {
-    if (!s) return [];
-    return s.split(/[,;|\/]/).map(function(x) { return x.trim(); }).filter(Boolean);
+    if(!s) return [];
+    return s.split(/[,;|\/]/).map(function(x){return x.trim();}).filter(Boolean);
   }
 
-  var date  = todayISO();
-  var block = localStorage.getItem('messloo_user_block') || '';
-  var name  = (localStorage.getItem('messloo_user_name') || 'Student').split(' ')[0];
-  var menus = getCached('messloo_menus_' + date + '_' + block + '_veg')
-           || getCached('messloo_menus_' + date + '_' + block + '_non_veg')
-           || [];
-
+  var date    = todayISO();
+  var block   = localStorage.getItem('messloo_user_block')||'';
+  var rawName = localStorage.getItem('messloo_user_name')||'';
+  var fname   = rawName.split(' ')[0]||'';
+  var curType = 'veg';
   var menuMap = {};
-  menus.forEach(function(m) { menuMap[m.meal_type] = m; });
 
-  /* ── bottom sheet ── */
-  function openSheet(mt) {
-    var item = menuMap[mt];
-    if (!item) return;
-    var dishes = splitDishes(item.items);
-    document.getElementById('sheet-accent').style.background = GRADS[mt];
-    document.getElementById('sheet-title').textContent = LABELS[mt];
-    document.getElementById('sheet-time').textContent  = TIMES[mt];
-    var dishesEl = document.getElementById('sheet-dishes');
-    var emptyEl  = document.getElementById('sheet-empty');
-    if (dishes.length === 0) {
-      dishesEl.style.display = 'none';
-      emptyEl.style.display  = 'block';
-    } else {
-      emptyEl.style.display  = 'none';
-      dishesEl.style.display = 'block';
-      dishesEl.innerHTML = dishes.map(function(d, i) {
-        var bg  = i % 2 === 0 ? '#FFFAF5' : '#FFF6EE';
-        var sep = i < dishes.length - 1 ? 'border-bottom:1px solid #F0E6D3;' : '';
-        return '<div class="dish-row" style="background:' + bg + ';' + sep + '">'
-          + '<span class="dish-dot"></span>'
-          + '<span class="dish-name">' + d + '</span>'
-          + '</div>';
-      }).join('');
-    }
-    document.getElementById('overlay').style.display = 'block';
-    document.getElementById('sheet').style.display   = 'block';
+  function loadMenus(type) {
+    var arr = getCached('messloo_menus_'+date+'_'+block+'_'+type)||[];
+    menuMap={};
+    arr.forEach(function(m){menuMap[m.meal_type]=m;});
   }
 
-  function closeSheet() {
-    document.getElementById('overlay').style.display = 'none';
-    document.getElementById('sheet').style.display   = 'none';
+  function makeCard(mt) {
+    var item   = menuMap[mt];
+    var dishes = item?splitDishes(item.items):[];
+    var f      = FADES[mt];
+    var prev   = dishes.slice(0,3).join('  ·  ');
+    var extra  = dishes.length>3?dishes.length-3:0;
+    var g      = GRADS[mt];
+    var hasMenu= !!item;
+
+    return '<div class="card" data-meal="'+mt+'">'
+      +'<div class="banner" style="background:'+g+'">'
+      +'<div class="b-img" style="background-image:url('+IMGS[mt]+')"></div>'
+      +'<div class="b-fade" style="background:linear-gradient(90deg,'+f+' 0%,'+f+' 38%,'+f+'ee 50%,'+f+'aa 60%,'+f+'55 70%,'+f+'22 80%,transparent 92%)"></div>'
+      +'<div class="b-wash" style="background:'+g+'"></div>'
+      +'<div class="b-text">'
+      +'<p class="b-name">'+LABELS[mt]+'</p>'
+      +'<p class="b-time">'+EMOJIS[mt]+' '+TIMES[mt]+'</p>'
+      +'</div>'
+      +'</div>'
+      +'<div class="dishes">'
+      +'<div style="flex:1;min-width:0">'
+      +(hasMenu
+        ?'<p class="dish-txt">'+(prev||item.items||'')+'</p>'+(extra>0?'<span class="more-pill">+'+extra+' more</span>':'')
+        :'<p class="no-menu">Menu not posted yet</p>')
+      +'</div>'
+      +(hasMenu
+        ?'<div class="arrow" style="background:'+g+';box-shadow:0 4px 10px '+SHADS[mt]+'">'
+          +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none">'
+          +'<path d="M5 12H19M13 6L19 12L13 18" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+          +'</svg></div>'
+        :'')
+      +'</div>'
+      +'</div>';
   }
-  document.getElementById('overlay').addEventListener('click', closeSheet);
-  document.getElementById('close-btn').addEventListener('click', closeSheet);
 
-  /* ── card ── */
-  function card(mt) {
-    var item    = menuMap[mt];
-    var dishes  = item ? splitDishes(item.items) : [];
-    var mid     = '·';
-    var preview = dishes.slice(0, 3).join('  ' + mid + '  ')
-                  + (dishes.length > 3 ? '  +' + (dishes.length - 3) : '');
-    var arrow   = '<div class="card-arrow">'
-      + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none">'
-      + '<path d="M5 12H19M13 6L19 12L13 18" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
-      + '</svg></div>';
-
-    return '<div class="card' + (item ? ' clickable' : '') + '" data-meal="' + mt + '"'
-      + ' style="background:' + GRADS[mt] + ';box-shadow:0 8px 28px rgba(0,0,0,.18)">'
-      + '<div class="card-time">' + TIMES[mt] + '</div>'
-      + '<div class="card-title">' + LABELS[mt] + '</div>'
-      + (item
-          ? '<div class="card-preview">' + (preview || item.items) + '</div>'
-          : '<div class="card-empty">Menu not posted</div>')
-      + '<div class="card-footer">'
-      + (item ? arrow : '<span></span>')
-      + (dishes.length > 0 ? '<span class="card-count">' + dishes.length + ' dishes</span>' : '')
-      + '</div>'
-      + '<div class="deco1"></div><div class="deco2"></div>'
-      + '</div>';
+  function renderCards() {
+    loadMenus(curType);
+    document.getElementById('cards').innerHTML = ORDER.map(makeCard).join('');
+    document.querySelectorAll('.card[data-meal]').forEach(function(el) {
+      if(menuMap[el.getAttribute('data-meal')]) {
+        el.addEventListener('click',function(){openSheet(el.getAttribute('data-meal'));});
+      }
+    });
   }
 
-  /* ── render page ── */
-  document.getElementById('app').innerHTML =
-    '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px">'
-    + '<div>'
-    + '<p style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#B08040;margin-bottom:4px">' + greeting() + '</p>'
-    + '<h1 style="font-size:26px;font-weight:900;color:#1C1C1E;line-height:1.1;margin-bottom:5px">' + name + '</h1>'
-    + (block ? '<p style="font-size:11px;font-weight:600;color:#8B7355">' + block + '</p>' : '')
-    + '</div>'
-    + '<span class="badge">Offline</span>'
-    + '</div>'
-    + '<div style="display:flex;align-items:center;gap:8px">'
-    + '<h2 style="font-size:15px;font-weight:900;color:#1C1C1E">Today&#39;s Menu</h2>'
-    + '<span class="badge-sm">Cached</span>'
-    + '</div>'
-    + (menus.length === 0
-        ? '<div style="text-align:center;margin-top:48px">'
-          + '<p style="font-size:13px;font-weight:600;color:#8B7355;margin-bottom:6px">No cached menu for today.</p>'
-          + '<p style="font-size:11px;color:#B0956E">Open the app while online to cache today&#39;s menu.</p>'
-          + '</div>'
-        : '<div class="grid">' + ORDER.map(card).join('') + '</div>')
-    + '<p class="hint">Connect to internet to mark attendance or rate meals.</p>';
+  function setSeg(key,idx) {
+    curType=key;
+    document.querySelectorAll('.seg button').forEach(function(b,i){
+      b.className=i===idx?'active':'';
+    });
+    var n=TYPES.length;
+    var pill=document.querySelector('.seg-pill');
+    pill.style.left='calc(4px + '+idx+' * (100% - 8px) / '+n+')';
+    pill.style.width='calc((100% - 8px) / '+n+')';
+    renderCards();
+  }
 
-  /* ── wire card taps ── */
-  document.querySelectorAll('.card.clickable').forEach(function(el) {
-    el.addEventListener('click', function() { openSheet(el.getAttribute('data-meal')); });
+  /* bottom sheet */
+  var overlay=document.getElementById('overlay');
+  var sheet=document.getElementById('sheet');
+  window.openSheet=function(mt) {
+    var item=menuMap[mt]; if(!item) return;
+    var dishes=splitDishes(item.items);
+    var rows=dishes.map(function(d,i){
+      var bg=i%2===0?'rgba(255,255,255,.85)':'rgba(248,248,248,.85)';
+      var sep=i<dishes.length-1?'border-bottom:1px solid rgba(0,0,0,.06);':'';
+      return '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:'+bg+';'+sep+'">'
+        +'<span style="width:6px;height:6px;border-radius:50%;background:'+DOTS[mt]+';flex-shrink:0"></span>'
+        +'<span style="font-size:14px;font-weight:500;color:#1C1C1E">'+d+'</span></div>';
+    }).join('');
+    sheet.innerHTML='<div style="height:4px;background:'+GRADS[mt]+'"></div>'
+      +'<div style="padding:20px 20px max(40px,calc(env(safe-area-inset-bottom,0px)+32px))">'
+      +'<div style="width:40px;height:4px;border-radius:2px;background:#DDD;margin:0 auto 16px"></div>'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
+      +'<div style="width:40px;height:40px;border-radius:12px;background:'+GRADS[mt]+';display:flex;align-items:center;justify-content:center;font-size:20px">'+EMOJIS[mt]+'</div>'
+      +'<div><p style="font-size:16px;font-weight:900;color:#1C1C1E">'+LABELS[mt]+'</p>'
+      +'<p style="font-size:11px;color:#8B8B8B">'+TIMES[mt]+'</p></div>'
+      +'</div>'
+      +(rows?'<div style="border:1px solid rgba(0,0,0,.06);border-radius:12px;overflow:hidden">'+rows+'</div>':'')
+      +'<button onclick="closeSheet()" style="width:100%;margin-top:16px;padding:12px;border-radius:16px;background:rgba(0,0,0,.07);color:#8B8B8B;font-size:14px;font-weight:600;border:none;cursor:pointer">Close</button>'
+      +'</div>';
+    overlay.style.display='block';sheet.style.display='block';
+  };
+  window.closeSheet=function(){overlay.style.display='none';sheet.style.display='none';};
+  overlay.addEventListener('click',closeSheet);
+
+  /* build header */
+  // data-key / data-idx avoids onclick string literals with embedded quotes
+  var segBtns=TYPES.map(function(t,i){
+    return '<button class="'+(i===0?'active':'')+'" data-key="'+t.key+'" data-idx="'+i+'">'+t.label+'</button>';
+  }).join('');
+
+  document.getElementById('app').innerHTML=
+    '<div style="display:flex;align-items:flex-start;justify-content:space-between">'
+    +'<div style="flex:1;min-width:0">'
+    +'<p class="greeting">'+greeting()+'</p>'
+    +'<h1 class="uname">'+(fname||'MessLoo')+'</h1>'
+    +'</div>'
+    +'</div>'
+    +(block?'<div><span class="block-pill">&#127968; '+block+'</span></div>':'')
+    +'<div class="seg"><div class="seg-pill" style="width:calc((100% - 8px)/3);left:4px"></div>'+segBtns+'</div>'
+    +'<p class="sec-title">Today&#39;s Menu</p>'
+    +'<div id="cards"></div>';
+
+  // Bind seg buttons after innerHTML — no onclick string args needed
+  document.querySelectorAll('.seg button[data-key]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      setSeg(btn.getAttribute('data-key'), parseInt(btn.getAttribute('data-idx'), 10));
+    });
   });
+
+  renderCards();
 })();
 </script>
 </body>

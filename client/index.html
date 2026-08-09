@@ -12,7 +12,18 @@
     <title>MessLoo — VIT-AP Mess</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <!-- Init theme before first paint to avoid FOUC -->
+  <script>
+    (function(){
+      try {
+        var s = localStorage.getItem('messloo_theme');
+        var t = (s === 'dark' || s === 'light') ? s
+              : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', t);
+      } catch(e) {}
+    })();
+  </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,11 +1,13 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import MealCard from '../components/MealCard'
+import BottomTabBar from '../components/BottomTabBar'
 
 const MEAL_ORDER = ['breakfast', 'lunch', 'snacks', 'dinner']
+
 const MENU_TYPES = [
-  { key: 'veg',     label: 'Veg Mess',  dot: '#16a34a' },
-  { key: 'non_veg', label: 'Non-Veg',   dot: '#E23744' },
-  { key: 'special', label: 'Special',   dot: '#F59E0B' },
+  { key: 'veg',     label: 'Veg'     },
+  { key: 'non_veg', label: 'Non-Veg' },
+  { key: 'special', label: 'Special' },
 ]
 
 function todayISO() {
@@ -22,17 +24,72 @@ function getGreeting() {
   return 'Good evening'
 }
 
-export default function OfflineFallback() {
-  const date = useMemo(() => todayISO(), [])
+// Same segmented control as StudentDashboard
+function SegmentedControl({ value, onChange, options }) {
+  const n = options.length
+  const idx = options.findIndex((o) => o.key === value)
+  return (
+    <div
+      className="relative flex"
+      style={{
+        background: 'var(--seg-bg)',
+        border: 'var(--seg-border)',
+        borderRadius: 100,
+        padding: 4,
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+      }}
+    >
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          top: 4, bottom: 4,
+          left: `calc(4px + ${idx} * (100% - 8px) / ${n})`,
+          width: `calc((100% - 8px) / ${n})`,
+          background: 'var(--seg-active-bg)',
+          borderRadius: 100,
+          transition: 'left 0.22s cubic-bezier(0.4,0,0.2,1)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+          pointerEvents: 'none',
+        }}
+      />
+      {options.map((o) => (
+        <button
+          key={o.key}
+          type="button"
+          onClick={() => onChange(o.key)}
+          style={{
+            flex: 1,
+            position: 'relative',
+            zIndex: 1,
+            padding: '9px 8px',
+            borderRadius: 100,
+            fontSize: 13,
+            fontWeight: 700,
+            color: value === o.key ? 'var(--seg-active-text)' : 'var(--seg-inactive-text)',
+            transition: 'color 0.22s',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
-  // Read saved user info from localStorage (saved when online)
+export default function OfflineFallback() {
+  const date      = useMemo(() => todayISO(), [])
   const savedBlock = localStorage.getItem('messloo_user_block') || ''
   const savedName  = localStorage.getItem('messloo_user_name') || ''
-  const firstName  = savedName.split(' ')[0] || 'Student'
+  const firstName  = savedName.split(' ')[0] || null
 
   const [menuType, setMenuType] = useState('veg')
 
-  // Load cached menus for today
   const menus = useMemo(() => {
     try {
       const key = `messloo_menus_${date}_${savedBlock}_${menuType}`
@@ -46,110 +103,84 @@ export default function OfflineFallback() {
     return map
   }, [menus])
 
-  const activeMenuType = MENU_TYPES.find((t) => t.key === menuType)
-
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#FFF4EC' }}>
+    <div className="min-h-screen" style={{ background: 'transparent' }}>
 
-      {/* Background blobs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
-        <div style={{ position: 'absolute', top: -120, right: -80, width: 340, height: 340, borderRadius: '50%', background: 'radial-gradient(circle, rgba(235,51,73,0.18) 0%, transparent 70%)' }} />
-        <div style={{ position: 'absolute', top: 80, left: -100, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(247,151,30,0.16) 0%, transparent 70%)' }} />
-      </div>
-
-      {/* Header */}
-      <header className="relative z-10 px-5 pt-12 pb-3 max-w-lg mx-auto w-full">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-xs font-bold tracking-widest uppercase" style={{ color: '#B08040' }}>
+      {/* ── Header — identical to StudentDashboard ── */}
+      <header className="px-5 pb-3 max-w-lg mx-auto w-full" style={{ paddingTop: 'max(56px, calc(env(safe-area-inset-top, 0px) + 16px))' }}>
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <p
+              className="text-[11px] font-bold tracking-[0.14em] uppercase"
+              style={{ color: 'var(--greeting-color)' }}
+            >
               {getGreeting()}
             </p>
-            <h1 className="text-2xl font-black mt-0.5 tracking-tight" style={{ color: '#1C1C1E' }}>
-              {firstName}
+            <h1
+              className="mt-0.5 leading-none truncate"
+              style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}
+            >
+              {firstName ?? 'MessLoo'}
             </h1>
-            {savedBlock && (
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#E23744' }} />
-                <span className="text-xs font-semibold" style={{ color: '#8B7355' }}>{savedBlock}</span>
-              </div>
-            )}
           </div>
-
-          {/* Offline badge */}
-          <span
-            className="text-xs font-bold px-3 py-1.5 rounded-full"
-            style={{ background: 'rgba(247,151,30,0.15)', color: '#D97706', border: '1px solid rgba(247,151,30,0.4)' }}
-          >
-            Offline
-          </span>
         </div>
 
-        {/* Menu type toggle */}
-        <div className="flex gap-2 mb-1">
-          {MENU_TYPES.map(({ key, label, dot }) => {
-            const active = menuType === key
-            return (
-              <button
-                key={key}
-                onClick={() => setMenuType(key)}
-                className="rounded-full px-4 py-2 text-xs font-bold transition-all active:scale-95"
-                style={active
-                  ? { background: '#1C1C1E', color: '#FFF', boxShadow: '0 4px 12px rgba(28,28,30,0.25)' }
-                  : { background: 'rgba(255,255,255,0.75)', color: '#8B7355', border: '1px solid rgba(240,230,211,0.8)' }
-                }
-              >
-                {active && <span className="mr-1.5 inline-block w-1.5 h-1.5 rounded-full" style={{ background: dot, verticalAlign: 'middle' }} />}
-                {label}
-              </button>
-            )
-          })}
-        </div>
-      </header>
-
-      {/* Section header */}
-      <div className="relative z-10 px-5 pb-2 max-w-lg mx-auto w-full">
-        <div className="flex items-center gap-2">
-          <h2 className="text-base font-black" style={{ color: '#1C1C1E' }}>
-            Today's Menu
-            <span className="ml-2 text-xs font-semibold" style={{ color: '#B08040' }}>{activeMenuType?.label}</span>
-          </h2>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-            style={{ background: 'rgba(247,151,30,0.15)', color: '#D97706', border: '1px solid rgba(247,151,30,0.3)' }}>
-            Cached
-          </span>
-        </div>
-      </div>
-
-      {/* Meal grid */}
-      <main className="relative z-10 flex-1 px-5 pb-28 max-w-lg mx-auto w-full">
-        {menus.length === 0 ? (
-          <div className="mt-8 text-center">
-            <p className="text-sm font-semibold" style={{ color: '#8B7355' }}>
-              No cached menu available.
-            </p>
-            <p className="text-xs mt-1" style={{ color: '#B0956E' }}>
-              Open the app once online to cache today's menu.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 mt-2">
-            {MEAL_ORDER.map((mealType) => (
-              <MealCard
-                key={mealType}
-                mealType={mealType}
-                menuItem={menuByMeal[mealType]}
-                attendance={null}
-                onMarkAttendance={async () => {}}
-                onSubmitFeedback={async () => {}}
-              />
-            ))}
+        {savedBlock && (
+          <div className="flex items-center gap-2 mt-3">
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold"
+              style={{
+                background: 'var(--card-bg)',
+                backdropFilter: 'var(--card-blur)',
+                WebkitBackdropFilter: 'var(--card-blur)',
+                border: 'var(--card-border)',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              🏠 {savedBlock}
+            </span>
           </div>
         )}
 
-        <p className="text-center text-xs mt-6" style={{ color: '#C4A882' }}>
-          You're offline. Connect to mark attendance or submit feedback.
-        </p>
+        <div className="mt-4">
+          <SegmentedControl value={menuType} onChange={setMenuType} options={MENU_TYPES} />
+        </div>
+      </header>
+
+      {/* ── Section title ── */}
+      <div className="px-5 pb-2 max-w-lg mx-auto w-full">
+        <h2 className="text-[15px] font-black" style={{ color: 'var(--text-primary)' }}>
+          Today&#39;s Menu
+        </h2>
+      </div>
+
+      {/* ── Meal cards — single column, same as online ── */}
+      <main className="px-5 pb-28 max-w-lg mx-auto w-full">
+        <div className="flex flex-col gap-3 mt-1">
+          {menus.length === 0 && MEAL_ORDER.map((mt) => (
+            <MealCard
+              key={mt}
+              mealType={mt}
+              menuItem={null}
+              attendance={null}
+              onMarkAttendance={async () => {}}
+              onSubmitFeedback={async () => {}}
+            />
+          ))}
+          {menus.length > 0 && MEAL_ORDER.map((mt) => (
+            <MealCard
+              key={mt}
+              mealType={mt}
+              menuItem={menuByMeal[mt]}
+              attendance={null}
+              onMarkAttendance={async () => {}}
+              onSubmitFeedback={async () => {}}
+            />
+          ))}
+        </div>
       </main>
+
+      <BottomTabBar />
     </div>
   )
 }

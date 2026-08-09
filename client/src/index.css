@@ -1,51 +1,191 @@
 @import "tailwindcss";
 
+/* ══════════════════════════════════════════
+   LIGHT THEME  (default)
+══════════════════════════════════════════ */
 :root {
-  --color-primary: #E23744;
-  --color-secondary: #FF8C00;
-  --color-accent: #FFB830;
-  --color-bg: #FFF8F0;
-  --color-card: #FFFFFF;
-  --color-text: #1C1C1E;
-  --color-muted: #6B6B6B;
-  --color-border: #F0E6D3;
-  --color-success: #2ECC71;
+  --bg-gradient:        linear-gradient(135deg, #FFB5B5 0%, #B5E8C8 40%, #F5E87A 75%, #FFFFFF 100%);
+  --text-primary:       #1C1C1E;
+  --text-secondary:     #555555;
+  --text-muted:         #8B8B8B;
+  --card-bg:            rgba(255,255,255,0.45);
+  --card-blur:          blur(16px);
+  --card-border:        1px solid rgba(255,255,255,0.6);
+  --card-shadow:        0 4px 24px rgba(0,0,0,0.08);
+  --seg-bg:             rgba(255,255,255,0.45);
+  --seg-border:         1px solid rgba(255,255,255,0.6);
+  --seg-active-bg:      #E23744;
+  --seg-active-text:    #FFFFFF;
+  --seg-inactive-text:  #666666;
+  --pill-bg:            rgba(226,55,68,0.10);
+  --pill-color:         #E23744;
+  --pill-border:        rgba(226,55,68,0.20);
+  --bottom-bar-bg:      rgba(255,255,255,0.82);
+  --bottom-bar-border:  rgba(0,0,0,0.06);
+  --tab-active:         #E23744;
+  --tab-active-bg:      rgba(226,55,68,0.10);
+  --tab-inactive:       #999999;
+  --modal-bg:           rgba(255,255,255,0.96);
+  --modal-border:       rgba(255,255,255,0.8);
+  --dish-odd:           rgba(255,255,255,0.85);
+  --dish-even:          rgba(248,248,248,0.85);
+  --dish-border:        rgba(0,0,0,0.06);
+  --dish-text:          #1C1C1E;
+  --input-bg:           rgba(255,255,255,0.7);
+  --input-border:       rgba(0,0,0,0.10);
+  --skip-color:         #999999;
+  --error-bg:           rgba(226,55,68,0.08);
+  --error-color:        #E23744;
+  --error-border:       rgba(226,55,68,0.20);
+  --offline-bg:         rgba(247,151,30,0.15);
+  --offline-color:      #D97706;
+  --offline-border:     rgba(247,151,30,0.30);
+  --greeting-color:     #999999;
+  --handle-color:       #DDDDDD;
+  --toggle-bg:          rgba(0,0,0,0.07);
+  --section-title:      #1C1C1E;
 }
 
-html, body, #root {
+/* ══════════════════════════════════════════
+   DARK THEME
+══════════════════════════════════════════ */
+[data-theme="dark"] {
+  --bg-gradient:        linear-gradient(135deg, #3D0000 0%, #0A0A3A 40%, #1A1A00 70%, #7A4500 100%);
+  --text-primary:       #FFFFFF;
+  --text-secondary:     rgba(255,255,255,0.65);
+  --text-muted:         rgba(255,255,255,0.38);
+  --card-bg:            rgba(255,255,255,0.08);
+  --card-blur:          blur(16px);
+  --card-border:        1px solid rgba(255,255,255,0.12);
+  --card-shadow:        0 4px 24px rgba(0,0,0,0.32);
+  --seg-bg:             rgba(255,255,255,0.10);
+  --seg-border:         1px solid rgba(255,255,255,0.14);
+  --seg-active-bg:      #FFFFFF;
+  --seg-active-text:    #1C1C1E;
+  --seg-inactive-text:  rgba(255,255,255,0.48);
+  --pill-bg:            rgba(255,255,255,0.12);
+  --pill-color:         rgba(255,255,255,0.80);
+  --pill-border:        rgba(255,255,255,0.18);
+  --bottom-bar-bg:      rgba(5,5,15,0.80);
+  --bottom-bar-border:  rgba(255,255,255,0.10);
+  --tab-active:         #FF8A96;
+  --tab-active-bg:      rgba(255,138,150,0.14);
+  --tab-inactive:       rgba(255,255,255,0.38);
+  --modal-bg:           rgba(12,8,8,0.96);
+  --modal-border:       rgba(255,255,255,0.12);
+  --dish-odd:           rgba(255,255,255,0.06);
+  --dish-even:          rgba(255,255,255,0.03);
+  --dish-border:        rgba(255,255,255,0.08);
+  --dish-text:          rgba(255,255,255,0.88);
+  --input-bg:           rgba(255,255,255,0.08);
+  --input-border:       rgba(255,255,255,0.14);
+  --skip-color:         rgba(255,255,255,0.42);
+  --error-bg:           rgba(255,107,118,0.12);
+  --error-color:        #FF8A96;
+  --error-border:       rgba(255,107,118,0.25);
+  --offline-bg:         rgba(251,176,64,0.15);
+  --offline-color:      #FBB040;
+  --offline-border:     rgba(251,176,64,0.35);
+  --greeting-color:     rgba(255,255,255,0.38);
+  --handle-color:       rgba(255,255,255,0.18);
+  --toggle-bg:          rgba(255,255,255,0.10);
+  --section-title:      rgba(255,255,255,0.90);
+}
+
+/* ══════════════════════════════════════════
+   SYSTEM DARK (no manual override)
+══════════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-gradient:        linear-gradient(135deg, #3D0000 0%, #0A0A3A 40%, #1A1A00 70%, #7A4500 100%);
+    --text-primary:       #FFFFFF;
+    --text-secondary:     rgba(255,255,255,0.65);
+    --text-muted:         rgba(255,255,255,0.38);
+    --card-bg:            rgba(255,255,255,0.08);
+    --card-blur:          blur(16px);
+    --card-border:        1px solid rgba(255,255,255,0.12);
+    --card-shadow:        0 4px 24px rgba(0,0,0,0.32);
+    --seg-bg:             rgba(255,255,255,0.10);
+    --seg-border:         1px solid rgba(255,255,255,0.14);
+    --seg-active-bg:      #FFFFFF;
+    --seg-active-text:    #1C1C1E;
+    --seg-inactive-text:  rgba(255,255,255,0.48);
+    --pill-bg:            rgba(255,255,255,0.12);
+    --pill-color:         rgba(255,255,255,0.80);
+    --pill-border:        rgba(255,255,255,0.18);
+    --bottom-bar-bg:      rgba(5,5,15,0.80);
+    --bottom-bar-border:  rgba(255,255,255,0.10);
+    --tab-active:         #FF8A96;
+    --tab-inactive:       rgba(255,255,255,0.38);
+    --modal-bg:           rgba(12,8,8,0.96);
+    --modal-border:       rgba(255,255,255,0.12);
+    --dish-odd:           rgba(255,255,255,0.06);
+    --dish-even:          rgba(255,255,255,0.03);
+    --dish-border:        rgba(255,255,255,0.08);
+    --dish-text:          rgba(255,255,255,0.88);
+    --input-bg:           rgba(255,255,255,0.08);
+    --input-border:       rgba(255,255,255,0.14);
+    --skip-color:         rgba(255,255,255,0.42);
+    --error-bg:           rgba(255,107,118,0.12);
+    --error-color:        #FF8A96;
+    --error-border:       rgba(255,107,118,0.25);
+    --offline-bg:         rgba(251,176,64,0.15);
+    --offline-color:      #FBB040;
+    --offline-border:     rgba(251,176,64,0.35);
+    --greeting-color:     rgba(255,255,255,0.38);
+    --handle-color:       rgba(255,255,255,0.18);
+    --toggle-bg:          rgba(255,255,255,0.10);
+    --section-title:      rgba(255,255,255,0.90);
+  }
+}
+
+/* ══════════════════════════════════════════
+   BASE
+══════════════════════════════════════════ */
+
+/*
+  Use a position:fixed pseudo-element for the gradient background.
+  background-attachment:fixed is broken on iOS Safari / Chrome Android —
+  the pseudo-element approach works everywhere.
+*/
+html {
   min-height: 100%;
-  background-color: var(--color-bg);
 }
-
+html::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: var(--bg-gradient);
+  z-index: -1;
+  pointer-events: none;
+  /* Smooth theme transition */
+  transition: background 0.4s ease;
+}
+body, #root {
+  min-height: 100%;
+  background: transparent;
+}
 body {
   margin: 0;
   font-family: 'Plus Jakarta Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: var(--color-text);
+  color: var(--text-primary);
 }
+* { box-sizing: border-box; }
 
-* {
-  box-sizing: border-box;
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.2); border-radius: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-thumb {
-  background: #F0E6D3;
-  border-radius: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
 
-/* Hide scrollbar for horizontal pill scrollers */
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+/* ── Gold shimmer for special meals ── */
+@keyframes gold-shimmer {
+  0%, 100% { box-shadow: 0 0 0 2px #F59E0B, 0 6px 24px rgba(245,158,11,0.25); }
+  50%       { box-shadow: 0 0 0 2px #FCD34D, 0 6px 24px rgba(252,211,77,0.45); }
 }
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+.special-shimmer {
+  animation: gold-shimmer 1.8s ease-in-out infinite;
 }
