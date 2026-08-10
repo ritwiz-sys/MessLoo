@@ -283,6 +283,12 @@ function DetailsTab({ cfg, dishes, onConfirm, onSkip, submitting }) {
 function MealPopup({ cfg, dishes, onConfirm, onSkip, onClose, submitting, getToken }) {
   const [tab, setTab] = useState('details') // 'details' | 'ai'
 
+  // Lock body scroll while popup is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"

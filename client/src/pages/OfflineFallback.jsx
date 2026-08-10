@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import MealCard from '../components/MealCard'
 import BottomTabBar from '../components/BottomTabBar'
+import { useTheme } from '../hooks/useTheme'
 
 const MEAL_ORDER = ['breakfast', 'lunch', 'snacks', 'dinner']
 
@@ -88,6 +89,7 @@ export default function OfflineFallback() {
   const savedName  = localStorage.getItem('messloo_user_name') || ''
   const firstName  = savedName.split(' ')[0] || null
 
+  const { theme, toggle: toggleTheme } = useTheme()
   const [menuType, setMenuType] = useState('veg')
 
   const menus = useMemo(() => {
@@ -122,6 +124,24 @@ export default function OfflineFallback() {
             >
               {firstName ?? 'MessLoo'}
             </h1>
+          </div>
+
+          {/* Theme toggle — same as StudentDashboard */}
+          <div className="flex items-center gap-2 ml-3 mt-0.5">
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
+              style={{
+                background: 'var(--toggle-bg)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                border: 'var(--card-border)',
+                fontSize: 17,
+              }}
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
           </div>
         </div>
 
