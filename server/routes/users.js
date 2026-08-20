@@ -2,13 +2,45 @@ const express = require('express')
 const router = express.Router()
 const supabase = require('../supabase')
 const verifyAuth = require('../middleware/auth')
+const { createClerkClient } = require('@clerk/backend')
+
+const clerkClient = createClerkClient({
+  secretKey: process.env.CLERK_SECRET_KEY,
+  publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
+})
+
+const SUPER_ADMINS = [] // add super-admin emails here when needed
 
 router.post('/sync', verifyAuth, async (req, res) => {
-  const { name, college_id, block_id, role } = req.body
+  const { name, college_id, block_id } = req.body
   const clerk_user_id = req.userId
 
-  // Check if user already exists
-  const { data: existingUser, error: fetchError } = await supabase
+  // ── VIT-AP email gate ──────────────────────────────────────────────────────
+  let email
+  try {
+    const clerkUser = await clerkClient.users.getUser(clerk_user_id)
+    const primaryEmail = clerkUser.emailAddresses.find(
+      (e) => e.id === clerkUser.primaryEmailAddressId
+    )
+    email = primaryEmail?.emailAddress || ''
+  } catch (err) {
+    return res.status(500).json({ error: 'Could not verify email with Clerk.' })
+  }
+
+  if (!email.endsWith('@vitap.ac.in') && !email.endsWith('@vitapstudent.ac.in')) {
+    return res.status(403).json({
+      error: 'Only VIT-AP students can access MessLoo. Please use your @vitap.ac.in email.',
+    })
+  }
+
+  // ── Role assignment ────────────────────────────────────────────────────────
+  let role = 'student'
+  if (SUPER_ADMINS.includes(email)) {
+    role = 'super_admin'
+  }
+
+  // ── Check if user already exists ───────────────────────────────────────────
+  const { data: existingUser } = await supabase
     .from('users')
     .select('*')
     .eq('clerk_user_id', clerk_user_id)
@@ -18,7 +50,7 @@ router.post('/sync', verifyAuth, async (req, res) => {
     return res.json({ data: existingUser })
   }
 
-  // Create new user
+  // ── Create new user ────────────────────────────────────────────────────────
   const { data: newUser, error: createError } = await supabase
     .from('users')
     .insert({
@@ -26,7 +58,7 @@ router.post('/sync', verifyAuth, async (req, res) => {
       name,
       college_id,
       block_id,
-      role: role || 'student'
+      role,
     })
     .select()
     .single()
