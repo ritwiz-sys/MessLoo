@@ -7,6 +7,7 @@ import StudentDashboard from './pages/StudentDashboard'
 import ChatPage from './pages/ChatPage'
 import ProfilePage from './pages/ProfilePage'
 import AdminDashboard from './pages/AdminDashboard'
+import InvitePage from './pages/InvitePage'
 
 const ADMIN_ROLES = ['super_admin', 'company_admin']
 const STUDENT_ROLES = ['student']
@@ -97,6 +98,9 @@ function AppRoutes() {
       <Route path="/dashboard" element={<StudentPage><StudentDashboard /></StudentPage>} />
       <Route path="/chat"      element={<StudentPage><ChatPage /></StudentPage>} />
       <Route path="/profile"   element={<StudentPage><ProfilePage /></StudentPage>} />
+
+      {/* ── Public ── */}
+      <Route path="/invite" element={<InvitePage />} />
 
       {/* ── Admin ── */}
       <Route
