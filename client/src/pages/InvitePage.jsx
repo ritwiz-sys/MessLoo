@@ -27,7 +27,7 @@ export default function InvitePage() {
   async function handleShare() {
     const data = {
       title: 'MessLoo — VIT-AP Mess App',
-      text: "Check out MessLoo! Today's mess menu, AI chat, and it works offline. Sign in with your @vitap.ac.in email.",
+      text: "Check out MessLoo! Today's mess menu, AI chat, and it works offline. Sign in with your @vitap.ac.in/@vitapstudent.ac.in email.",
       url: APP_URL,
     }
     if (navigator.share) {
