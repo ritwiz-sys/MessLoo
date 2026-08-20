@@ -16,21 +16,24 @@ router.post('/sync', verifyAuth, async (req, res) => {
   const clerk_user_id = req.userId
 
   // ── VIT-AP email gate ──────────────────────────────────────────────────────
+  // Check ALL email addresses on the account, not just the primary — users may
+  // have signed up with a personal email first and added their VIT-AP email later.
   let email
   try {
     const clerkUser = await clerkClient.users.getUser(clerk_user_id)
-    const primaryEmail = clerkUser.emailAddresses.find(
-      (e) => e.id === clerkUser.primaryEmailAddressId
+    const vitapEmail = clerkUser.emailAddresses.find(
+      (e) =>
+        e.emailAddress.endsWith('@vitap.ac.in') ||
+        e.emailAddress.endsWith('@vitapstudent.ac.in')
     )
-    email = primaryEmail?.emailAddress || ''
+    if (!vitapEmail) {
+      return res.status(403).json({
+        error: 'Only VIT-AP students can access MessLoo. Please add your @vitap.ac.in email to your account.',
+      })
+    }
+    email = vitapEmail.emailAddress
   } catch (err) {
     return res.status(500).json({ error: 'Could not verify email with Clerk.' })
-  }
-
-  if (!email.endsWith('@vitap.ac.in') && !email.endsWith('@vitapstudent.ac.in')) {
-    return res.status(403).json({
-      error: 'Only VIT-AP students can access MessLoo. Please use your @vitap.ac.in email.',
-    })
   }
 
   // ── Role assignment ────────────────────────────────────────────────────────

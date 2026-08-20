@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAuth, UserButton } from '../lib/clerk'
 import { api } from '../lib/api'
 import { useUserContext } from '../context/UserContext'
@@ -159,10 +159,155 @@ function FeedbackModal({ onClose, onSubmit }) {
   )
 }
 
+// ── Block picker sheet ────────────────────────────────────────────────────────
+function BlockSheet({ currentBlockId, onClose, onConfirm }) {
+  const [blocks, setBlocks] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [selectedId, setSelectedId] = useState(currentBlockId || null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  useEffect(() => {
+    api.getBlocks()
+      .then((res) => setBlocks(res?.data || []))
+      .catch((err) => setError(err.message || 'Failed to load blocks'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const grouped = useMemo(() => {
+    const map = {}
+    for (const b of blocks) {
+      const cat = b.block_category || 'Other'
+      if (!map[cat]) map[cat] = []
+      map[cat].push(b)
+    }
+    return map
+  }, [blocks])
+
+  const categories = Object.keys(grouped).sort()
+  const selectedBlock = blocks.find((b) => b.id === selectedId)
+
+  const handleConfirm = async () => {
+    if (!selectedId || selectedId === currentBlockId) { onClose(); return }
+    setSaving(true)
+    try {
+      await onConfirm(selectedId)
+      onClose()
+    } catch (err) {
+      setError(err.message || 'Failed to save block')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        className="w-full max-w-lg rounded-t-3xl flex flex-col"
+        style={{
+          background: 'var(--modal-bg)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderTop: '1px solid var(--modal-border)',
+          maxHeight: '85vh',
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
+          <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Change Block</h2>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-xl"
+            style={{ background: 'var(--toggle-bg)', color: 'var(--text-muted)' }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Scrollable block list */}
+        <div className="flex-1 overflow-y-auto px-5 pb-2">
+          {error && (
+            <div className="rounded-2xl p-3 mb-3 text-xs font-medium" style={{ background: '#FFF0F1', color: '#E23744', border: '1px solid #FCCFD2' }}>
+              {error}
+            </div>
+          )}
+          {loading ? (
+            <div className="grid grid-cols-3 gap-2 py-2">
+              {Array.from({ length: 9 }).map((_, i) => (
+                <div key={i} className="h-14 rounded-2xl animate-pulse" style={{ background: 'var(--toggle-bg)' }} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-5 py-1">
+              {categories.map((cat) => (
+                <div key={cat}>
+                  <p className="text-[11px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>{cat}</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {grouped[cat].map((block) => {
+                      const active = block.id === selectedId
+                      return (
+                        <button
+                          key={block.id}
+                          type="button"
+                          onClick={() => setSelectedId(block.id)}
+                          className="flex flex-col items-start rounded-2xl py-3 px-3 transition-all active:scale-95"
+                          style={{
+                            background: active ? '#FFF0F1' : 'var(--dish-odd)',
+                            border: active ? '2px solid #E23744' : 'var(--card-border)',
+                            color: active ? '#E23744' : 'var(--text-primary)',
+                          }}
+                        >
+                          <span className="text-sm font-bold">{block.name || block.block_name}</span>
+                          {block.catering_company && (
+                            <span className="text-[10px] font-medium mt-0.5" style={{ color: active ? '#E23744' : 'var(--text-muted)', opacity: 0.8 }}>
+                              {block.catering_company}
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 pb-10 pt-3 flex-shrink-0" style={{ borderTop: '1px solid var(--modal-border)' }}>
+          {selectedBlock && (
+            <p className="text-xs font-semibold mb-3" style={{ color: 'var(--text-muted)' }}>
+              🏠 {selectedBlock.name}{selectedBlock.catering_company ? ` · ${selectedBlock.catering_company}` : ''}
+            </p>
+          )}
+          <button
+            onClick={handleConfirm}
+            disabled={!selectedId || saving}
+            className="w-full rounded-2xl py-3 text-sm font-bold disabled:opacity-40 transition-all active:scale-95"
+            style={{ background: '#E23744', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(226,55,68,0.25)' }}
+          >
+            {saving ? 'Saving…' : selectedId === currentBlockId ? 'Keep current block' : 'Confirm block →'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main ProfilePage ──────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const { getToken } = useAuth()
-  const { profile, blockName, cateringCompany, refetch } = useUserContext()
+  const { profile, blockName, cateringCompany, updateBlock, refetch } = useUserContext()
 
   const [preferences, setPreferences] = useState({ liked_dishes: [], disliked_dishes: [] })
   const [feedbackList, setFeedbackList] = useState([])
@@ -170,6 +315,7 @@ export default function ProfilePage() {
   const [loadingFeedback, setLoadingFeedback] = useState(true)
   const [prefSaving, setPrefSaving] = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const [blockSheetOpen, setBlockSheetOpen] = useState(false)
 
   // Edit profile state
   const [editing, setEditing] = useState(false)
@@ -407,6 +553,36 @@ export default function ProfilePage() {
           )}
         </section>
 
+        {/* ── Block card ── */}
+        <section
+          className="rounded-2xl px-4 py-4 mt-3"
+          style={{ background: 'var(--modal-bg)', border: '1px solid var(--dish-border)', backdropFilter: 'var(--card-blur)', WebkitBackdropFilter: 'var(--card-blur)' }}
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Your Block</h2>
+            <button
+              onClick={typeof navigator !== 'undefined' && !navigator.onLine ? null : () => setBlockSheetOpen(true)}
+              disabled={typeof navigator !== 'undefined' && !navigator.onLine}
+              className="text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ color: '#E23744' }}
+            >
+              Change
+            </button>
+          </div>
+          <div className="mt-2">
+            {blockName ? (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
+                style={{ background: 'var(--dish-odd)', border: 'var(--card-border)', color: 'var(--text-primary)' }}
+              >
+                🏠 {blockName}{cateringCompany ? ` · ${cateringCompany}` : ''}
+              </span>
+            ) : (
+              <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>No block set</p>
+            )}
+          </div>
+        </section>
+
         {/* ── Preferences card ── */}
         <section
           className="rounded-2xl px-4 py-4 mt-3"
@@ -517,6 +693,17 @@ export default function ProfilePage() {
           )}
         </section>
       </main>
+
+      {blockSheetOpen && (
+        <BlockSheet
+          currentBlockId={profile?.block_id}
+          onClose={() => setBlockSheetOpen(false)}
+          onConfirm={async (blockId) => {
+            await updateBlock(blockId)
+            await refetch()
+          }}
+        />
+      )}
 
       {feedbackOpen && (
         <FeedbackModal
