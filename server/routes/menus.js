@@ -16,6 +16,7 @@ router.get('/', verifyAuth, async (req, res) => {
     .select('*')
     .eq('block_category', block_category)
     .eq('date', date)
+    .eq('is_special', false)
     .order('meal_type')
 
   if (error) {
