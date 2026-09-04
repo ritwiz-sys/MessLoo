@@ -22,25 +22,20 @@ async function getEmbedding(text) {
 }
 
 async function queryRAG(question, blockCategory, messType = null, conversationHistory = []) {
+  // Step 1 — embed the question
   const questionVector = await getEmbedding(question)
 
+  // Step 2 — vector search (increased to 8 chunks)
   const rpcParams = {
     query_embedding: questionVector,
-    match_count: 5,
+    match_count: 8,
     filter_block_category: blockCategory,
   }
   if (messType) {
     rpcParams.filter_mess_type = messType
   }
 
-  // DEBUG
-  console.log('RAG search params:', { blockCategory, messType })
-
   const { data: results, error } = await supabase.rpc('match_menus', rpcParams)
-
-  // DEBUG
-  console.log('RAG results count:', results?.length)
-  console.log('RAG error:', error?.message)
 
   if (error) {
     console.error('pgvector search error:', error.message)
@@ -50,23 +45,29 @@ async function queryRAG(question, blockCategory, messType = null, conversationHi
   const relevantChunks = results.map(r => r.content)
   const context = relevantChunks.join('\n\n')
 
-  const todayISO = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
-  const todayFull = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-  const messTypeLabel = messType ? ` (${messType})` : ''
-  const systemPrompt = `You are a friendly mess assistant for VIT-AP (VIT Amaravati) students.
-Today's date is ${todayFull} (${todayISO}).
+  // Step 3 — build system prompt with today's date
+  const today = new Date().toLocaleDateString('en-IN', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'Asia/Kolkata',
+  })
+
+  const messTypeLabel = messType ? ` (${messType} mess)` : ''
+  const systemPrompt = `You are a helpful mess assistant for VIT Amaravati hostel students.
+Today's date is ${today}.
 The student is in the ${blockCategory} block${messTypeLabel}.
 
-Use the menu data below to answer the student's question. Rules:
-- When the student asks about "today", use the entry matching today's date (${todayISO}).
-- If today's exact menu is not in the data, say so clearly and mention the closest upcoming day's menu you DO have.
-- NEVER say you don't have information if relevant menu entries are present in the context — read the dates carefully.
-- List out dish names in a readable way (e.g. "Dinner includes Roti, Dal, Paneer...").
-- Be brief, warm, and helpful. Do not invent dishes or dates.
+Answer questions based ONLY on the mess menu context provided below.
+Do NOT use any outside knowledge about food or menus.
+If the answer is not in the context, say exactly: "I don't have menu information for that date or meal."
+Be concise, friendly, and accurate. Never make up dish names or dates.
 
 Menu Context:
 ${context}`
 
+  // Step 4 — build messages array
   const historyMessages = conversationHistory.map(msg => ({
     role: msg.role,
     content: msg.content,
@@ -78,12 +79,13 @@ ${context}`
     { role: 'user', content: question },
   ]
 
+  // Step 5 — call Groq with lower temperature
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
   const completion = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     messages,
-    temperature: 0.3,
+    temperature: 0.1,
   })
 
   return {
