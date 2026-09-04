@@ -25,7 +25,6 @@ const MEAL_LABELS = {
 const MENU_TYPES = [
   { key: 'veg',     label: 'Veg'      },
   { key: 'non_veg', label: 'Non-Veg'  },
-  { key: 'special', label: 'Special'  },
 ]
 
 function todayISO() {

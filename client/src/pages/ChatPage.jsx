@@ -5,11 +5,11 @@ import BottomTabBar from '../components/BottomTabBar'
 
 // ── Suggestion chips ──────────────────────────────────────────────────────────
 const SUGGESTIONS = [
-  "What's for dinner today?",
-  'Any specials this week?',
-  'Is there chicken tomorrow?',
-  "What's the breakfast menu?",
-  'Which block has better food?',
+  "What's for dinner tonight?",
+  "What's for breakfast tomorrow?",
+  'Is there chicken today?',
+  "What's for lunch today?",
+  "Any paneer dishes this week?",
 ]
 
 // ── Typing indicator ──────────────────────────────────────────────────────────
@@ -193,7 +193,7 @@ export default function ChatPage() {
               What can I help with?
             </p>
             <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>
-              Ask about meals, specials, ingredients, or schedules.
+              Ask about today's meals, ingredients, or upcoming menus.
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
               {SUGGESTIONS.map((s) => (
