@@ -66,7 +66,7 @@ async function fetchMenuContext(blockCategory, windowDays = 4) {
 
   return { context: lines.join('\n'), today: todayStr }
 }
-
+console.log('GROQ KEY:', process.env.GROQ_API_KEY?.slice(0, 10))
 async function queryRAG(question, blockCategory, messType = null, conversationHistory = []) {
   // Step 1 — fetch menu context directly from Supabase (no embeddings needed)
   const { context, today } = await fetchMenuContext(blockCategory, 4)
