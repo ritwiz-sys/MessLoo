@@ -1,7 +1,8 @@
 const express = require('express')
 const router = express.Router()
+const Groq = require('groq-sdk')
 const verifyAuth = require('../middleware/auth')
-const { queryRAG } = require('../rag/query')
+const { queryRAG, pickModel } = require('../rag/query')
 const supabase = require('../supabase')
 
 router.post('/', verifyAuth, async (req, res) => {
@@ -54,8 +55,9 @@ Menu Data:
 ${fallbackContext}`
     
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+    const fallbackModel = await pickModel(groq)
     const fallbackResult = await groq.chat.completions.create({
-      model: 'llama-3.1-8b-instant',
+      model: fallbackModel,
       messages: [
         { role: 'system', content: fallbackSystemPrompt },
         { role: 'user', content: question },

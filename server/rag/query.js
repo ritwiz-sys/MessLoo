@@ -199,4 +199,4 @@ ${context}`
   }
 }
 
-module.exports = { queryRAG }
+module.exports = { queryRAG, pickModel }
