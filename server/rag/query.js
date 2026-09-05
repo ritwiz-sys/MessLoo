@@ -1,9 +1,8 @@
 const supabase = require('../supabase')
 const { HfInference } = require('@huggingface/inference')
-const OpenAI = require('openai')
+const Groq = require('groq-sdk')
 
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY)
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 async function getEmbedding(text) {
   const result = await hf.featureExtraction({
@@ -58,8 +57,10 @@ ${context}`
     { role: 'user', content: question },
   ]
 
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+
+  const completion = await groq.chat.completions.create({
+    model: 'llama3-8b-8192',
     messages,
     temperature: 0.1,
     max_tokens: 512,
