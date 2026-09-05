@@ -1,6 +1,41 @@
 const Groq = require('groq-sdk')
 const supabase = require('../supabase')
 
+// Priority list — we try these in order and use the first one available on the account
+const PREFERRED_MODELS = [
+  'llama-3.1-8b-instant',
+  'llama3-8b-8192',
+  'llama-3.3-70b-versatile',
+  'llama-3.1-70b-versatile',
+  'gemma2-9b-it',
+  'gemma-7b-it',
+  'mixtral-8x7b-32768',
+]
+
+let _cachedModel = null
+async function pickModel(groq) {
+  if (_cachedModel) return _cachedModel
+  try {
+    const list = await groq.models.list()
+    const available = new Set(list.data.map((m) => m.id))
+    console.log('[RAG] Available Groq models:', [...available].join(', '))
+    for (const m of PREFERRED_MODELS) {
+      if (available.has(m)) {
+        _cachedModel = m
+        console.log('[RAG] Selected model:', m)
+        return m
+      }
+    }
+    // fallback: use whatever the first chat-capable model is
+    _cachedModel = list.data[0]?.id || 'llama-3.1-8b-instant'
+    console.log('[RAG] Fallback model:', _cachedModel)
+    return _cachedModel
+  } catch (err) {
+    console.warn('[RAG] Could not list models, defaulting:', err.message)
+    return 'llama-3.1-8b-instant'
+  }
+}
+
 function getDateRange(windowDays = 3) {
   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
   const dates = []
@@ -109,11 +144,12 @@ ${context}`
   ]
 
   // 3 — Call Groq
-  console.log('[RAG] Calling Groq...')
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+  const model = await pickModel(groq)
+  console.log('[RAG] Calling Groq with model:', model)
 
   const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    model,
     messages,
     temperature: 0.1,
     max_tokens: 512,
