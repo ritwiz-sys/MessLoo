@@ -34,18 +34,6 @@ function todayISO() {
   return local.toISOString().slice(0, 10)
 }
 
-function offsetISO(days) {
-  const now = new Date()
-  now.setDate(now.getDate() + days)
-  const offset = now.getTimezoneOffset()
-  const local = new Date(now.getTime() - offset * 60 * 1000)
-  return local.toISOString().slice(0, 10)
-}
-
-function getWeekDays() {
-  return [-3, -2, -1, 0, 1, 2, 3].map((d) => offsetISO(d))
-}
-
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 function parseDateParts(iso) {
@@ -82,78 +70,182 @@ function popPendingFeedback() {
   } catch { return null }
 }
 
-// ── Week Strip ────────────────────────────────────────────────────────────────
-function WeekStrip({ selectedDate, onSelect }) {
-  const days = getWeekDays()
+// ── Calendar Strip (full-month, scrollable, with month navigation) ─────────────
+function CalendarStrip({ selectedDate, onSelect }) {
   const today = todayISO()
-  const stripRef = useRef(null)
-  const todayRef = useRef(null)
 
-  // Auto-scroll today into view on mount
+  const [viewYM, setViewYM] = useState(() => {
+    const [y, m] = selectedDate.split('-').map(Number)
+    return { year: y, month: m }
+  })
+
+  const stripRef = useRef(null)
+  const selectedRef = useRef(null)
+
+  // All days in the viewed month
+  const days = useMemo(() => {
+    const { year, month } = viewYM
+    const count = new Date(year, month, 0).getDate()
+    return Array.from({ length: count }, (_, i) => {
+      const d = i + 1
+      return `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    })
+  }, [viewYM])
+
+  // Scroll selected day into view whenever view changes
   useEffect(() => {
-    if (todayRef.current && stripRef.current) {
-      const strip = stripRef.current
-      const el = todayRef.current
-      const offset = el.offsetLeft - strip.clientWidth / 2 + el.clientWidth / 2
-      strip.scrollTo({ left: offset, behavior: 'smooth' })
-    }
-  }, [])
+    requestAnimationFrame(() => {
+      if (selectedRef.current && stripRef.current) {
+        const strip = stripRef.current
+        const el = selectedRef.current
+        strip.scrollTo({ left: el.offsetLeft - strip.clientWidth / 2 + el.clientWidth / 2, behavior: 'smooth' })
+      }
+    })
+  }, [viewYM, days])
+
+  const monthLabel = new Date(viewYM.year, viewYM.month - 1, 1)
+    .toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+
+  const isCurrentMonth = (() => {
+    const [ty, tm] = today.split('-').map(Number)
+    return viewYM.year === ty && viewYM.month === tm
+  })()
+
+  const prevMonth = () => setViewYM(({ year, month }) =>
+    month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 }
+  )
+  const nextMonth = () => setViewYM(({ year, month }) =>
+    month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 }
+  )
+  const jumpToday = () => {
+    const [y, m] = today.split('-').map(Number)
+    setViewYM({ year: y, month: m })
+    onSelect(today)
+  }
+
+  const handleSelect = (iso) => {
+    const [y, m] = iso.split('-').map(Number)
+    setViewYM({ year: y, month: m })
+    onSelect(iso)
+  }
 
   return (
     <div
-      ref={stripRef}
-      className="flex gap-2 overflow-x-auto pb-1"
-      style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+      className="rounded-2xl overflow-hidden"
+      style={{
+        background: 'var(--card-bg)',
+        backdropFilter: 'var(--card-blur)',
+        WebkitBackdropFilter: 'var(--card-blur)',
+        border: 'none',
+        boxShadow: 'var(--card-shadow)',
+      }}
     >
-      <style>{`.week-strip::-webkit-scrollbar{display:none}`}</style>
-      {days.map((iso) => {
-        const { letter, num } = parseDateParts(iso)
-        const isToday = iso === today
-        const isSelected = iso === selectedDate
-        return (
-          <button
-            key={iso}
-            ref={isToday ? todayRef : null}
-            onClick={() => onSelect(iso)}
-            className="flex flex-col items-center shrink-0 rounded-2xl transition-all active:scale-90"
-            style={{
-              width: 44,
-              paddingTop: 10,
-              paddingBottom: 10,
-              background: isSelected
-                ? '#E23744'
-                : isToday
-                ? 'var(--card-bg)'
-                : 'transparent',
-              border: isToday && !isSelected
-                ? '1.5px solid #E23744'
-                : isSelected
-                ? 'none'
-                : '1.5px solid transparent',
-              boxShadow: isSelected ? '0 4px 14px rgba(226,55,68,0.30)' : 'none',
-            }}
-          >
-            <span
-              className="text-[10px] font-bold uppercase tracking-wider mb-1"
-              style={{ color: isSelected ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)' }}
+      {/* Month navigation row */}
+      <div className="flex items-center justify-between px-3 pt-3 pb-2">
+        <button
+          onClick={prevMonth}
+          className="w-8 h-8 flex items-center justify-center rounded-full transition-all active:scale-90"
+          style={{
+            background: 'var(--toggle-bg)',
+            color: 'var(--text-muted)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+            <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[13px] font-black" style={{ color: 'var(--text-primary)' }}>
+            {monthLabel}
+          </span>
+          {!isCurrentMonth && (
+            <button
+              onClick={jumpToday}
+              className="text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-all active:scale-95"
+              style={{
+                background: 'rgba(226,55,68,0.15)',
+                color: '#E23744',
+                border: '1px solid rgba(226,55,68,0.25)',
+              }}
             >
-              {letter}
-            </span>
-            <span
-              className="text-base font-extrabold leading-none"
-              style={{ color: isSelected ? '#fff' : isToday ? '#E23744' : 'var(--text-primary)' }}
+              Today
+            </button>
+          )}
+        </div>
+
+        <button
+          onClick={nextMonth}
+          className="w-8 h-8 flex items-center justify-center rounded-full transition-all active:scale-90"
+          style={{
+            background: 'var(--toggle-bg)',
+            color: 'var(--text-muted)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Day scrollable tape */}
+      <div
+        ref={stripRef}
+        className="flex gap-1.5 overflow-x-auto px-3 pb-3"
+        style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+      >
+        <style>{`.no-scrollbar::-webkit-scrollbar{display:none}`}</style>
+        {days.map((iso) => {
+          const { letter, num } = parseDateParts(iso)
+          const isToday   = iso === today
+          const isSelected = iso === selectedDate
+          return (
+            <button
+              key={iso}
+              ref={isSelected ? selectedRef : null}
+              onClick={() => handleSelect(iso)}
+              className="flex flex-col items-center shrink-0 rounded-2xl transition-all active:scale-90"
+              style={{
+                width: 42,
+                paddingTop: 8,
+                paddingBottom: 8,
+                background: isSelected
+                  ? 'linear-gradient(160deg, #E23744 0%, #C0392B 100%)'
+                  : isToday
+                  ? 'rgba(226,55,68,0.08)'
+                  : 'transparent',
+                border: isToday && !isSelected
+                  ? '1.5px solid rgba(226,55,68,0.35)'
+                  : isSelected
+                  ? 'none'
+                  : '1.5px solid transparent',
+                boxShadow: isSelected ? '0 4px 14px rgba(226,55,68,0.32)' : 'none',
+              }}
             >
-              {num}
-            </span>
-            {isToday && !isSelected && (
               <span
-                className="w-1.5 h-1.5 rounded-full mt-1.5"
-                style={{ background: '#E23744' }}
-              />
-            )}
-          </button>
-        )
-      })}
+                className="text-[10px] font-bold uppercase tracking-wider mb-1"
+                style={{ color: isSelected ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)' }}
+              >
+                {letter}
+              </span>
+              <span
+                className="font-extrabold leading-none"
+                style={{
+                  fontSize: 15,
+                  color: isSelected ? '#fff' : isToday ? '#E23744' : 'var(--text-primary)',
+                }}
+              >
+                {num}
+              </span>
+              {isToday && !isSelected && (
+                <span className="w-1.5 h-1.5 rounded-full mt-1.5" style={{ background: '#E23744' }} />
+              )}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -180,8 +272,7 @@ function SegmentedControl({ value, onChange, options }) {
         aria-hidden="true"
         style={{
           position: 'absolute',
-          top: 4,
-          bottom: 4,
+          top: 4, bottom: 4,
           left: `calc(4px + ${idx} * (100% - 8px) / ${n})`,
           width: `calc((100% - 8px) / ${n})`,
           background: 'var(--seg-active-bg)',
@@ -198,17 +289,13 @@ function SegmentedControl({ value, onChange, options }) {
           onClick={() => onChange(o.key)}
           style={{
             flex: 1,
-            position: 'relative',
-            zIndex: 1,
+            position: 'relative', zIndex: 1,
             padding: '9px 8px',
             borderRadius: 100,
-            fontSize: 13,
-            fontWeight: 700,
+            fontSize: 13, fontWeight: 700,
             color: value === o.key ? 'var(--seg-active-text)' : 'var(--seg-inactive-text)',
             transition: 'color 0.22s',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
+            background: 'none', border: 'none', cursor: 'pointer',
             WebkitTapHighlightColor: 'transparent',
           }}
         >
@@ -241,8 +328,8 @@ function FeedbackModal({ entry, onClose, onSubmit }) {
         style={{
           background: 'var(--modal-bg)',
           borderTop: '1px solid var(--modal-border)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
+          backdropFilter: 'blur(28px)',
+          WebkitBackdropFilter: 'blur(28px)',
         }}
       >
         <div className="mx-auto w-10 h-1 rounded-full mb-5" style={{ background: 'var(--handle-color)' }} />
@@ -297,13 +384,14 @@ function SkeletonCard() {
     <div
       className="w-full animate-pulse"
       style={{
-        height: 88,
-        borderRadius: 20,
-        background: 'var(--card-bg)',
+        height: 88, borderRadius: 20,
+        background: 'linear-gradient(90deg, var(--card-bg) 25%, var(--toggle-bg) 50%, var(--card-bg) 75%)',
+        backgroundSize: '200% 100%',
+        animation: 'shimmer 1.4s infinite',
         backdropFilter: 'var(--card-blur)',
         WebkitBackdropFilter: 'var(--card-blur)',
         border: 'var(--card-border)',
-        opacity: 0.5,
+        opacity: 0.6,
       }}
     />
   )
@@ -387,11 +475,12 @@ function DashboardAiChat({ onClose, getToken }) {
         style={{
           maxHeight: '88vh',
           background: 'var(--modal-bg)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
+          backdropFilter: 'blur(28px)',
+          WebkitBackdropFilter: 'blur(28px)',
           borderTop: '1px solid var(--modal-border)',
           borderRadius: '28px 28px 0 0',
           overflow: 'hidden',
+          boxShadow: '0 -8px 40px rgba(0,0,0,0.25)',
         }}
       >
         {/* Header */}
@@ -424,8 +513,6 @@ function DashboardAiChat({ onClose, getToken }) {
             </svg>
           </button>
         </div>
-
-        {/* Divider */}
         <div style={{ height: 1, background: 'var(--dish-border)', margin: '0 20px' }} />
 
         {/* Messages */}
@@ -435,7 +522,7 @@ function DashboardAiChat({ onClose, getToken }) {
           <div ref={bottomRef} />
         </div>
 
-        {/* Suggestion chips (only on first open) */}
+        {/* Chips */}
         {messages.length <= 1 && !thinking && (
           <div className="px-5 pb-2 flex gap-2 overflow-x-auto no-scrollbar">
             {AI_CHIPS.map((c) => (
@@ -451,14 +538,19 @@ function DashboardAiChat({ onClose, getToken }) {
           </div>
         )}
 
-        {/* Input bar — padded above floating pill nav */}
+        {/* Input */}
         <div
           className="px-5 shrink-0"
           style={{ paddingBottom: 'max(96px, calc(env(safe-area-inset-bottom, 0px) + 88px))' }}
         >
           <div
             className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-            style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)' }}
+            style={{
+              background: 'var(--input-bg)',
+              border: '1px solid var(--input-border)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+            }}
           >
             <input
               type="text"
@@ -522,7 +614,6 @@ export default function StudentDashboard() {
     try { return JSON.parse(localStorage.getItem(cacheKey(bc, mt)) || 'null') } catch { return null }
   }, [cacheKey])
 
-  // Save user info for offline fallback
   useEffect(() => {
     if (blockCategory) localStorage.setItem('messloo_user_block', blockCategory)
     if (profile?.name) localStorage.setItem('messloo_user_name', profile.name)
@@ -623,6 +714,14 @@ export default function StudentDashboard() {
 
   const firstName = profile?.name?.split(' ')[0] || null
 
+  // Formatted date for section title
+  const formattedSelectedDate = useMemo(() => {
+    const [y, m, d] = selectedDate.split('-').map(Number)
+    return new Date(y, m - 1, d).toLocaleDateString('en-IN', {
+      weekday: 'long', day: 'numeric', month: 'short',
+    })
+  }, [selectedDate])
+
   return (
     <div className="min-h-screen" style={{ background: 'transparent' }}>
 
@@ -638,10 +737,17 @@ export default function StudentDashboard() {
         <DashboardAiChat onClose={() => setShowAiChat(false)} getToken={getToken} />
       )}
 
-      {/* ── Header ── */}
-      <header className="px-5 pb-3 max-w-lg mx-auto w-full" style={{ paddingTop: 'max(56px, calc(env(safe-area-inset-top, 0px) + 16px))' }}>
+      {/* ── Header — scrolls with page, blends into background ── */}
+      <header
+        className="px-5 pb-4 max-w-lg mx-auto w-full"
+        style={{
+          paddingTop: 'max(52px, calc(env(safe-area-inset-top, 0px) + 14px))',
+          background: 'transparent',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
+        }}
+      >
 
-        {/* Top row: greeting/name | controls */}
+        {/* Top row: greeting + controls */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <p
@@ -652,13 +758,12 @@ export default function StudentDashboard() {
             </p>
             <h1
               className="mt-0.5 leading-none truncate"
-              style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}
+              style={{ fontSize: 30, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
             >
               {firstName ?? 'MessLoo'}
             </h1>
           </div>
 
-          {/* Theme toggle + avatar */}
           <div className="flex items-center gap-2 ml-3 mt-0.5">
             <button
               onClick={toggleTheme}
@@ -670,6 +775,7 @@ export default function StudentDashboard() {
                 WebkitBackdropFilter: 'blur(8px)',
                 border: 'var(--card-border)',
                 fontSize: 17,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
               }}
             >
               {theme === 'dark' ? '☀️' : '🌙'}
@@ -678,7 +784,7 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Block + next meal pills */}
+        {/* Info pills: block + next meal */}
         {(blockName || nextMeal) && (
           <div className="flex items-center gap-2 mt-3 flex-wrap">
             {blockName && (
@@ -690,33 +796,32 @@ export default function StudentDashboard() {
                   WebkitBackdropFilter: 'var(--card-blur)',
                   border: 'var(--card-border)',
                   color: 'var(--text-secondary)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                 }}
               >
                 🏠 {blockName}{cateringCompany ? ` · ${cateringCompany}` : ''}
               </span>
             )}
-            {nextMeal && (
+            {nextMeal && isToday && (
               <span
                 className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold"
                 style={{
-                  background: 'var(--pill-bg)',
-                  color: 'var(--pill-color)',
-                  border: `1px solid var(--pill-border)`,
+                  background: 'rgba(226,55,68,0.08)',
+                  color: '#E23744',
+                  border: '1px solid rgba(226,55,68,0.2)',
+                  boxShadow: '0 2px 8px rgba(226,55,68,0.08)',
                 }}
               >
-                <span
-                  className="w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{ background: 'var(--pill-color)' }}
-                />
+                <span className="w-1.5 h-1.5 rounded-full shrink-0 animate-pulse" style={{ background: '#E23744' }} />
                 {MEAL_LABELS[nextMeal]} · {MEAL_TIMES[nextMeal]}
               </span>
             )}
           </div>
         )}
 
-        {/* Week strip */}
+        {/* Calendar strip */}
         <div className="mt-4">
-          <WeekStrip selectedDate={selectedDate} onSelect={setSelectedDate} />
+          <CalendarStrip selectedDate={selectedDate} onSelect={setSelectedDate} />
         </div>
 
         {/* Segmented control */}
@@ -726,21 +831,23 @@ export default function StudentDashboard() {
       </header>
 
       {/* ── Section title ── */}
-      <div className="px-5 pb-2 max-w-lg mx-auto w-full">
+      <div className="px-5 pt-4 pb-2 max-w-lg mx-auto w-full">
         <div className="flex items-center justify-between">
           <h2 className="text-[15px] font-black" style={{ color: 'var(--text-primary)' }}>
-            {isToday
-              ? "Today's Menu"
-              : new Date(...selectedDate.split('-').map((v, i) => i === 1 ? Number(v) - 1 : Number(v))).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })
-            }
+            {isToday ? "Today's Menu" : formattedSelectedDate}
           </h2>
           {!isToday && (
             <button
               onClick={() => setSelectedDate(today)}
               className="text-[11px] font-bold px-3 py-1 rounded-full transition-all active:scale-95"
-              style={{ background: 'var(--card-bg)', color: '#E23744', border: '1px solid rgba(226,55,68,0.3)' }}
+              style={{
+                background: 'rgba(226,55,68,0.10)',
+                color: '#E23744',
+                border: '1px solid rgba(226,55,68,0.25)',
+                boxShadow: '0 2px 8px rgba(226,55,68,0.10)',
+              }}
             >
-              Back to Today
+              ← Today
             </button>
           )}
         </div>
@@ -753,14 +860,16 @@ export default function StudentDashboard() {
           style={{
             background: 'var(--error-bg)',
             color: 'var(--error-color)',
-            border: `1px solid var(--error-border)`,
+            border: '1px solid var(--error-border)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
           }}
         >
           {profileError || error}
         </div>
       )}
 
-      {/* ── Meal cards (single column) ── */}
+      {/* ── Meal cards ── */}
       <main className="px-5 pb-28 max-w-lg mx-auto w-full">
         <div className="flex flex-col gap-3 mt-1">
           {profileLoading || loading
@@ -777,12 +886,13 @@ export default function StudentDashboard() {
                     onSubmitFeedback={handleSubmitFeedback}
                     getToken={getToken}
                     offline={offline}
+                    isActive={isToday && mt === nextMeal}
                   />
                 )
               })
           }
 
-          {/* ── Ask Mess AI banner card ── */}
+          {/* ── Ask Mess AI banner ── */}
           <button
             type="button"
             onClick={() => setShowAiChat(true)}
@@ -792,10 +902,9 @@ export default function StudentDashboard() {
               borderRadius: 20,
               padding: '20px 20px 20px 22px',
               minHeight: 110,
-              boxShadow: '0 8px 28px rgba(99,58,237,0.38)',
+              boxShadow: '0 8px 32px rgba(99,58,237,0.40), inset 0 1px 0 rgba(255,255,255,0.12)',
             }}
           >
-            {/* Subtle background circles for depth */}
             <div style={{
               position: 'absolute', top: -24, right: 64, width: 110, height: 110,
               borderRadius: '50%', background: 'rgba(255,255,255,0.07)', pointerEvents: 'none',
@@ -805,7 +914,6 @@ export default function StudentDashboard() {
               borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none',
             }} />
 
-            {/* Left: text + CTA */}
             <div style={{ maxWidth: '62%', position: 'relative', zIndex: 1 }}>
               <p style={{
                 fontSize: 17, fontWeight: 900, color: '#FFFFFF',
@@ -821,7 +929,7 @@ export default function StudentDashboard() {
                 background: '#FFFFFF', borderRadius: 100,
                 padding: '6px 14px',
                 fontSize: 12, fontWeight: 800, color: '#4F46E5',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
               }}>
                 Ask Now
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
@@ -830,14 +938,12 @@ export default function StudentDashboard() {
               </div>
             </div>
 
-            {/* Right: floating emoji illustration */}
             <div style={{
               position: 'absolute', right: 14, top: '50%',
               transform: 'translateY(-50%)',
               fontSize: 72, lineHeight: 1,
               filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.25))',
-              userSelect: 'none', pointerEvents: 'none',
-              zIndex: 1,
+              userSelect: 'none', pointerEvents: 'none', zIndex: 1,
             }}>
               🤖
             </div>
