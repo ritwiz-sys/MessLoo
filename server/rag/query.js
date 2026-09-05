@@ -1,12 +1,11 @@
 const supabase = require('../supabase')
-const { GoogleGenerativeAI } = require('@google/generative-ai')
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+const { HfInference } = require('@huggingface/inference')
+const OpenAI = require('openai')
 
+const hf = new HfInference(process.env.HUGGINGFACE_API_KEY)
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 async function getEmbedding(text) {
-  const { HfInference } = require('@huggingface/inference')
-  const hf = new HfInference(process.env.HUGGINGFACE_API_KEY)
   const result = await hf.featureExtraction({
     model: 'sentence-transformers/all-MiniLM-L6-v2',
     inputs: text,
@@ -23,10 +22,8 @@ async function getEmbedding(text) {
 }
 
 async function queryRAG(question, blockCategory, messType = null, conversationHistory = []) {
-  // Step 1 — embed question
   const questionVector = await getEmbedding(question)
 
-  // Step 2 — vector search
   const rpcParams = {
     query_embedding: questionVector,
     match_count: 8,
@@ -35,21 +32,13 @@ async function queryRAG(question, blockCategory, messType = null, conversationHi
   if (messType) rpcParams.filter_mess_type = messType
 
   const { data: results, error } = await supabase.rpc('match_menus', rpcParams)
-
-  if (error) {
-    console.error('pgvector search error:', error.message)
-    throw error
-  }
+  if (error) throw error
 
   const relevantChunks = results.map(r => r.content)
   const context = relevantChunks.join('\n\n')
 
-  // Step 3 — build system prompt
   const today = new Date().toLocaleDateString('en-IN', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     timeZone: 'Asia/Kolkata',
   })
 
@@ -57,30 +46,27 @@ async function queryRAG(question, blockCategory, messType = null, conversationHi
   const systemPrompt = `You are a helpful mess assistant for VIT Amaravati hostel students.
 Today is ${today}.
 The student is in the ${blockCategory} block${messTypeLabel}.
-
-Answer questions based ONLY on the mess menu context provided below.
-Do NOT use any outside knowledge about food or menus.
-If the answer is not in the context, say exactly: "I don't have menu information for that date or meal."
-Be concise, friendly, and accurate. Never make up dish names or dates.
+Answer ONLY from the menu context below. Never make up dishes or dates.
+If not in context, say: "I don't have menu information for that."
 
 Menu Context:
 ${context}`
 
-  // Step 4 — build history for Gemini format
-  const geminiHistory = conversationHistory.map(msg => ({
-    role: msg.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: msg.content }],
-  }))
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...conversationHistory.map(m => ({ role: m.role, content: m.content })),
+    { role: 'user', content: question },
+  ]
 
-  // Step 5 — call Gemini
-  const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
-
-  const chat = geminiModel.startChat({ history: geminiHistory })
-
-  const result = await chat.sendMessage(systemPrompt + '\n\nQuestion: ' + question)
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages,
+    temperature: 0.1,
+    max_tokens: 512,
+  })
 
   return {
-    answer: result.response.text(),
+    answer: completion.choices[0].message.content,
     sources: relevantChunks,
   }
 }
