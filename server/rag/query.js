@@ -1,16 +1,30 @@
 const Groq = require('groq-sdk')
 const supabase = require('../supabase')
 
-// Priority list — we try these in order and use the first one available on the account
+// Priority list — updated to match models actually available on this Groq account
 const PREFERRED_MODELS = [
+  'groq/compound-mini',
+  'groq/compound',
+  'qwen/qwen3.6-27b',
+  'qwen/qwen3.8-27b',
+  'openai/gpt-oss-20b',
+  'openai/gpt-oss-120b',
+  // legacy names as fallback
   'llama-3.1-8b-instant',
   'llama3-8b-8192',
-  'llama-3.3-70b-versatile',
-  'llama-3.1-70b-versatile',
   'gemma2-9b-it',
-  'gemma-7b-it',
   'mixtral-8x7b-32768',
 ]
+
+// Models that are NOT chat-completion capable (classifiers, speech, TTS, etc.)
+const NON_CHAT_MODELS = [
+  'whisper', 'prompt-guard', 'orpheus', 'allam', 'safeguard',
+]
+
+function isChatModel(id) {
+  const lower = id.toLowerCase()
+  return !NON_CHAT_MODELS.some((skip) => lower.includes(skip))
+}
 
 let _cachedModel = null
 async function pickModel(groq) {
@@ -19,6 +33,7 @@ async function pickModel(groq) {
     const list = await groq.models.list()
     const available = new Set(list.data.map((m) => m.id))
     console.log('[RAG] Available Groq models:', [...available].join(', '))
+    // Try preferred list first
     for (const m of PREFERRED_MODELS) {
       if (available.has(m)) {
         _cachedModel = m
@@ -26,13 +41,14 @@ async function pickModel(groq) {
         return m
       }
     }
-    // fallback: use whatever the first chat-capable model is
-    _cachedModel = list.data[0]?.id || 'llama-3.1-8b-instant'
-    console.log('[RAG] Fallback model:', _cachedModel)
+    // Fallback: first chat-capable model from account
+    const chatModels = list.data.map((m) => m.id).filter(isChatModel)
+    _cachedModel = chatModels[0] || 'groq/compound-mini'
+    console.log('[RAG] Fallback chat model:', _cachedModel)
     return _cachedModel
   } catch (err) {
     console.warn('[RAG] Could not list models, defaulting:', err.message)
-    return 'llama-3.1-8b-instant'
+    return 'groq/compound-mini'
   }
 }
 
@@ -188,7 +204,7 @@ ${context}`
     model,
     messages,
     temperature: 0.4,
-    max_tokens: 700,
+    max_tokens: 512,
   })
 
   console.log('[RAG] Groq responded OK')
