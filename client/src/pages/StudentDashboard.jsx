@@ -34,6 +34,26 @@ function todayISO() {
   return local.toISOString().slice(0, 10)
 }
 
+function offsetISO(days) {
+  const now = new Date()
+  now.setDate(now.getDate() + days)
+  const offset = now.getTimezoneOffset()
+  const local = new Date(now.getTime() - offset * 60 * 1000)
+  return local.toISOString().slice(0, 10)
+}
+
+function getWeekDays() {
+  return [-3, -2, -1, 0, 1, 2, 3].map((d) => offsetISO(d))
+}
+
+const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+
+function parseDateParts(iso) {
+  const [y, m, d] = iso.split('-').map(Number)
+  const dt = new Date(y, m - 1, d)
+  return { letter: DAY_LETTERS[dt.getDay()], num: d }
+}
+
 function getGreeting() {
   const h = new Date().getHours()
   if (h < 12) return 'Good morning'
@@ -60,6 +80,82 @@ function popPendingFeedback() {
     localStorage.setItem('messloo_pending_feedback', JSON.stringify(stored.filter((e) => e.menuId !== entry.menuId)))
     return entry
   } catch { return null }
+}
+
+// ── Week Strip ────────────────────────────────────────────────────────────────
+function WeekStrip({ selectedDate, onSelect }) {
+  const days = getWeekDays()
+  const today = todayISO()
+  const stripRef = useRef(null)
+  const todayRef = useRef(null)
+
+  // Auto-scroll today into view on mount
+  useEffect(() => {
+    if (todayRef.current && stripRef.current) {
+      const strip = stripRef.current
+      const el = todayRef.current
+      const offset = el.offsetLeft - strip.clientWidth / 2 + el.clientWidth / 2
+      strip.scrollTo({ left: offset, behavior: 'smooth' })
+    }
+  }, [])
+
+  return (
+    <div
+      ref={stripRef}
+      className="flex gap-2 overflow-x-auto pb-1"
+      style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+    >
+      <style>{`.week-strip::-webkit-scrollbar{display:none}`}</style>
+      {days.map((iso) => {
+        const { letter, num } = parseDateParts(iso)
+        const isToday = iso === today
+        const isSelected = iso === selectedDate
+        return (
+          <button
+            key={iso}
+            ref={isToday ? todayRef : null}
+            onClick={() => onSelect(iso)}
+            className="flex flex-col items-center shrink-0 rounded-2xl transition-all active:scale-90"
+            style={{
+              width: 44,
+              paddingTop: 10,
+              paddingBottom: 10,
+              background: isSelected
+                ? '#E23744'
+                : isToday
+                ? 'var(--card-bg)'
+                : 'transparent',
+              border: isToday && !isSelected
+                ? '1.5px solid #E23744'
+                : isSelected
+                ? 'none'
+                : '1.5px solid transparent',
+              boxShadow: isSelected ? '0 4px 14px rgba(226,55,68,0.30)' : 'none',
+            }}
+          >
+            <span
+              className="text-[10px] font-bold uppercase tracking-wider mb-1"
+              style={{ color: isSelected ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)' }}
+            >
+              {letter}
+            </span>
+            <span
+              className="text-base font-extrabold leading-none"
+              style={{ color: isSelected ? '#fff' : isToday ? '#E23744' : 'var(--text-primary)' }}
+            >
+              {num}
+            </span>
+            {isToday && !isSelected && (
+              <span
+                className="w-1.5 h-1.5 rounded-full mt-1.5"
+                style={{ background: '#E23744' }}
+              />
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
 }
 
 // ── Segmented Control ─────────────────────────────────────────────────────────
@@ -408,14 +504,16 @@ export default function StudentDashboard() {
   const [pendingFeedback, setPendingFeedback] = useState(null)
   const [menuType, setMenuType]               = useState('veg')
   const [showAiChat, setShowAiChat]           = useState(false)
+  const [selectedDate, setSelectedDate]       = useState(() => todayISO())
 
-  const date     = useMemo(() => todayISO(), [])
+  const today    = useMemo(() => todayISO(), [])
   const nextMeal = getNextMeal()
+  const isToday  = selectedDate === today
 
   // ── Cache helpers ──────────────────────────────────────────────────────────
   const cacheKey = useCallback(
-    (bc, mt) => `messloo_menus_${date}_${bc}_${mt}`,
-    [date]
+    (bc, mt) => `messloo_menus_${selectedDate}_${bc}_${mt}`,
+    [selectedDate]
   )
   const saveToCache = useCallback((bc, mt, items) => {
     try { localStorage.setItem(cacheKey(bc, mt), JSON.stringify(items)) } catch {}
@@ -467,7 +565,7 @@ export default function StudentDashboard() {
       try {
         const token = await getToken()
         const res = await Promise.race([
-          api.getMenus(token, { date, block_category: blockCategory, menu_type: menuType }),
+          api.getMenus(token, { date: selectedDate, block_category: blockCategory, menu_type: menuType }),
           new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
         ])
         const menuItems = res?.data || []
@@ -485,7 +583,7 @@ export default function StudentDashboard() {
           if (hasCache) {
             setOffline(true)
           } else {
-            setError('No internet and no cached menu for today.')
+            setError('No internet and no cached menu for this date.')
           }
         }
       } finally {
@@ -494,7 +592,7 @@ export default function StudentDashboard() {
     }
     load()
     return () => { cancelled = true }
-  }, [getToken, date, blockCategory, menuType, profileLoading, fetchAttendance, loadFromCache, saveToCache])
+  }, [getToken, selectedDate, blockCategory, menuType, profileLoading, fetchAttendance, loadFromCache, saveToCache])
 
   const menuByMeal = useMemo(() => {
     const map = {}
@@ -616,18 +714,35 @@ export default function StudentDashboard() {
           </div>
         )}
 
-        {/* Segmented control */}
+        {/* Week strip */}
         <div className="mt-4">
+          <WeekStrip selectedDate={selectedDate} onSelect={setSelectedDate} />
+        </div>
+
+        {/* Segmented control */}
+        <div className="mt-3">
           <SegmentedControl value={menuType} onChange={setMenuType} options={MENU_TYPES} />
         </div>
       </header>
 
       {/* ── Section title ── */}
       <div className="px-5 pb-2 max-w-lg mx-auto w-full">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between">
           <h2 className="text-[15px] font-black" style={{ color: 'var(--text-primary)' }}>
-            Today&#39;s Menu
+            {isToday
+              ? "Today's Menu"
+              : new Date(...selectedDate.split('-').map((v, i) => i === 1 ? Number(v) - 1 : Number(v))).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })
+            }
           </h2>
+          {!isToday && (
+            <button
+              onClick={() => setSelectedDate(today)}
+              className="text-[11px] font-bold px-3 py-1 rounded-full transition-all active:scale-95"
+              style={{ background: 'var(--card-bg)', color: '#E23744', border: '1px solid rgba(226,55,68,0.3)' }}
+            >
+              Back to Today
+            </button>
+          )}
         </div>
       </div>
 
