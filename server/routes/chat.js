@@ -30,7 +30,44 @@ router.post('/', verifyAuth, async (req, res) => {
     res.json(result)
   } catch (error) {
     console.error('RAG error:', error.message)
-    res.status(500).json({ error: error.message || 'Failed to process question' })
+    console.log('[FALLBACK] Using basic menu echo for question:', question)
+    
+    // Fetch menu without filters (just to get the table data)
+    const { data: fallbackMenus } = await supabase
+      .from('menus')
+      .select('date, meal_type, items')
+      .order('date')
+    
+    const fallbackContext = fallbackMenus && fallbackMenus.length > 0
+      ? fallbackMenus.map(m => `${m.date} ${m.meal_type}: ${m.items}`).join('\n')
+      : 'No menu data available.'
+    
+    // Ask Groq to just format and return the menu
+    const fallbackSystemPrompt = `
+You are a friendly mess assistant for VIT-AP.
+The student asked: "${question}"
+
+Here is the raw menu data; format it nicely for the student.
+If the question is about something else, say so but still show the menu.
+
+Menu Data:
+${fallbackContext}`
+    
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+    const fallbackResult = await groq.chat.completions.create({
+      model: 'llama-3.1-8b-instant',
+      messages: [
+        { role: 'system', content: fallbackSystemPrompt },
+        { role: 'user', content: question },
+      ],
+      temperature: 0.2,
+      max_tokens: 800,
+    })
+    
+    res.json({
+      answer: fallbackResult.choices[0].message.content,
+      sources: []
+    })
   }
 })
 
