@@ -30,7 +30,7 @@ router.post('/', verifyAuth, async (req, res) => {
     res.json(result)
   } catch (error) {
     console.error('RAG error:', error.message)
-    res.status(500).json({ error: 'Failed to process question' })
+    res.status(500).json({ error: error.message || 'Failed to process question' })
   }
 })
 
