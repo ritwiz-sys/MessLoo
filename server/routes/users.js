@@ -15,23 +15,17 @@ router.post('/sync', verifyAuth, async (req, res) => {
   const { name, college_id, block_id } = req.body
   const clerk_user_id = req.userId
 
-  // ── VIT-AP email gate ──────────────────────────────────────────────────────
-  // Check ALL email addresses on the account, not just the primary — users may
-  // have signed up with a personal email first and added their VIT-AP email later.
+  // ── Get primary email from Clerk ───────────────────────────────────────────
   let email
   try {
     const clerkUser = await clerkClient.users.getUser(clerk_user_id)
-    const vitapEmail = clerkUser.emailAddresses.find(
-      (e) =>
-        e.emailAddress.endsWith('@vitap.ac.in') ||
-        e.emailAddress.endsWith('@vitapstudent.ac.in')
+    const primary = clerkUser.emailAddresses.find(
+      (e) => e.id === clerkUser.primaryEmailAddressId
     )
-    if (!vitapEmail) {
-      return res.status(403).json({
-        error: 'Only VIT-AP students can access MessLoo. Please add your @vitap.ac.in email to your account.',
-      })
+    email = primary?.emailAddress || clerkUser.emailAddresses[0]?.emailAddress
+    if (!email) {
+      return res.status(400).json({ error: 'No email found on your account.' })
     }
-    email = vitapEmail.emailAddress
   } catch (err) {
     return res.status(500).json({ error: 'Could not verify email with Clerk.' })
   }
