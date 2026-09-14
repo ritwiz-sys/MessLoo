@@ -819,14 +819,17 @@ export default function StudentDashboard() {
             paddingBottom: 12,
           }}
         >
-          {/* Hamburger */}
+          {/* Menu icon — bento grid */}
           <button
             onClick={() => setShowMenu(!showMenu)}
             className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-90"
             style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
           >
-            <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
-              <path d="M0 1h18M0 7h12M0 13h18" stroke="rgba(255,255,255,0.72)" strokeWidth="1.8" strokeLinecap="round" />
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="0" y="0" width="7" height="7" rx="2" fill="rgba(255,255,255,0.75)" />
+              <rect x="9" y="0" width="7" height="7" rx="2" fill="#FFB830" />
+              <rect x="0" y="9" width="7" height="7" rx="2" fill="rgba(255,255,255,0.75)" />
+              <rect x="9" y="9" width="7" height="7" rx="2" fill="rgba(255,255,255,0.35)" />
             </svg>
           </button>
 
