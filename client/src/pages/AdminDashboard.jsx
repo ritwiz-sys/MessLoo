@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../lib/clerk'
-import { api } from '../lib/api'
+import { api, invalidateCache } from '../lib/api'
 import { useUserContext } from '../context/UserContext'
 import TopBar from '../components/TopBar'
 import PredictionsSection from '../components/PredictionsSection'
@@ -290,6 +290,10 @@ export default function AdminDashboard() {
         items: form.items,
         is_special: form.is_special,
       })
+      // Bust the client-side menu cache so students see the new menu immediately
+      invalidateCache(`api_menus_${form.date}_${form.block_category}_all`)
+      invalidateCache(`api_menus_${form.date}_${form.block_category}_veg`)
+      invalidateCache(`api_menus_${form.date}_${form.block_category}_non_veg`)
       setFormMessage('Menu item added.')
       setForm((f) => ({ ...emptyForm, block_category: f.block_category, date: f.date }))
       if (form.block_category === summaryCategory && form.date === todayISO()) {

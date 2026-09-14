@@ -1,13 +1,18 @@
-const CACHE = 'messloo-v6'
+const CACHE_STATIC  = 'messloo-static-v7'   // hashed JS/CSS bundles + images  (cache-first, forever)
+const CACHE_PAGES   = 'messloo-pages-v7'    // HTML navigation shell             (network-first)
+const CACHE_API     = 'messloo-api-v7'      // /menus API responses              (stale-while-revalidate)
+const API_TTL_MS    = 5 * 60 * 1000        // 5 min before a stale menu re-fetches in background
+const ALL_CACHES    = [CACHE_STATIC, CACHE_PAGES, CACHE_API]
 
-// ─── Standalone offline page ───────────────────────────────────────────────────
+// Public images to pre-cache on install
+const PRECACHE_IMAGES = ['/breakfast.jpg', '/lunch.jpg', '/snacks.jpg', '/dinner.jpg']
+
+// ─── Offline fallback page ─────────────────────────────────────────────────────
 // KEY RULE for this template literal:
 //   ✗ Never use \' or \" — the backslash is consumed by the template literal.
 //   ✓ Plain single quotes and double quotes are fine as literal characters.
 //   ✓ data-* attributes instead of onclick="fn('arg')" — avoids embedded quotes.
 //   ✓ &#39; for apostrophes in HTML text.
-//   ✓ <div style="background-image:url(...)"> instead of <img onerror>.
-//   ✓ CSS custom properties work fine in inline style="color:var(--x)".
 const OFFLINE_PAGE = `<!doctype html>
 <html lang="en">
 <head>
@@ -343,7 +348,6 @@ const OFFLINE_PAGE = `<!doctype html>
 
     sheet.innerHTML='<div style="height:4px;background:'+GRADS[mt]+'"></div>'
       +'<div style="padding-bottom:max(32px,calc(env(safe-area-inset-bottom,0px) + 24px))">'
-      // Header row — emoji+name left, X button right (identical to online MealCard popup)
       +'<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px">'
       +'<div style="display:flex;align-items:center;gap:10px">'
       +'<div style="width:40px;height:40px;border-radius:12px;background:'+GRADS[mt]+';box-shadow:0 4px 12px '+SHADS[mt]+';display:flex;align-items:center;justify-content:center;font-size:20px">'+EMOJIS[mt]+'</div>'
@@ -374,7 +378,6 @@ const OFFLINE_PAGE = `<!doctype html>
   overlay.addEventListener('click', closeSheet);
 
   /* ── Build initial HTML ── */
-  // data-key / data-idx on seg buttons — avoids onclick with quoted string args
   var segBtns=TYPES.map(function(t,i){
     return '<button class="'+(i===0?'active':'')+'" data-key="'+t.key+'" data-idx="'+i+'">'+t.label+'</button>';
   }).join('');
@@ -397,15 +400,13 @@ const OFFLINE_PAGE = `<!doctype html>
     +'<p class="sec-title">Today&#39;s Menu</p>'
     +'<div id="cards"></div>';
 
-  /* Wire up theme toggle */
-  applyTheme(currentTheme()); // set button icon from already-applied theme
+  applyTheme(currentTheme());
   document.getElementById('theme-btn').addEventListener('click', function() {
     var next=currentTheme()==='dark'?'light':'dark';
     try{localStorage.setItem('messloo_theme',next);}catch(e){}
     applyTheme(next);
   });
 
-  /* Wire up seg buttons */
   document.querySelectorAll('.seg button[data-key]').forEach(function(btn) {
     btn.addEventListener('click', function() {
       setSeg(btn.getAttribute('data-key'), parseInt(btn.getAttribute('data-idx'),10));
@@ -418,47 +419,170 @@ const OFFLINE_PAGE = `<!doctype html>
 </body>
 </html>`
 
-/* ── Install ── */
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function isStaticAsset(url) {
+  // Vite-built bundles have content hashes: /assets/index-AbCd1234.js
+  return url.pathname.startsWith('/assets/')
+}
+
+function isImage(url) {
+  return /\.(jpe?g|png|svg|webp|gif|ico)$/i.test(url.pathname)
+}
+
+function isMenusApi(url) {
+  return url.pathname.startsWith('/menus') || url.pathname.startsWith('/predict')
+}
+
+function isApiCall(url, origin) {
+  // Our Render backend (not same origin as Netlify frontend)
+  return url.origin !== origin && !url.hostname.includes('supabase') && !url.hostname.includes('clerk')
+}
+
+// ─── Install ── pre-cache public images ───────────────────────────────────────
 self.addEventListener('install', (e) => {
-  e.waitUntil(self.skipWaiting())
+  e.waitUntil(
+    caches.open(CACHE_STATIC)
+      .then((cache) => cache.addAll(PRECACHE_IMAGES))
+      .then(() => self.skipWaiting())
+  )
 })
 
-/* ── Activate ── */
+// ─── Activate ── wipe old caches ─────────────────────────────────────────────
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(
+        keys.filter((k) => !ALL_CACHES.includes(k)).map((k) => caches.delete(k))
+      ))
       .then(() => self.clients.claim())
   )
 })
 
-/* ── Fetch ── */
+// ─── Fetch ────────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', (e) => {
   const { request } = e
   const url = new URL(request.url)
 
+  // Only handle GET
   if (request.method !== 'GET') return
-  if (url.pathname.startsWith('/api/')) return
-  if (url.hostname.includes('supabase')) return
+  // Skip chrome-extension, data:, etc.
   if (!url.protocol.startsWith('http')) return
-  if (url.hostname.includes('clerk') && !url.pathname.startsWith('/npm/')) return
+  // Skip Supabase (always network)
+  if (url.hostname.includes('supabase')) return
 
-  e.respondWith(
-    fetch(request)
-      .then((res) => {
-        if (res.ok) {
-          const clone = res.clone()
-          caches.open(CACHE).then((c) => c.put(request, clone))
-        }
+  // ── 1. Hashed JS/CSS bundles → CACHE-FIRST (safe: hashes change with content) ──
+  if (isStaticAsset(url)) {
+    e.respondWith(
+      caches.open(CACHE_STATIC).then(async (cache) => {
+        const cached = await cache.match(request)
+        if (cached) return cached
+        const res = await fetch(request)
+        if (res.ok) cache.put(request, res.clone())
         return res
       })
-      .catch(async () => {
-        if (request.mode === 'navigate') {
+    )
+    return
+  }
+
+  // ── 2. Images → CACHE-FIRST ──────────────────────────────────────────────────
+  if (isImage(url)) {
+    e.respondWith(
+      caches.open(CACHE_STATIC).then(async (cache) => {
+        const cached = await cache.match(request)
+        if (cached) return cached
+        try {
+          const res = await fetch(request)
+          if (res.ok) cache.put(request, res.clone())
+          return res
+        } catch {
+          return new Response('', { status: 503 })
+        }
+      })
+    )
+    return
+  }
+
+  // ── 3. Menus + Predictions API → STALE-WHILE-REVALIDATE (5 min TTL) ─────────
+  if (isMenusApi(url)) {
+    e.respondWith(
+      caches.open(CACHE_API).then(async (cache) => {
+        const cached = await cache.match(request)
+
+        // Check TTL stored as a custom header we inject on cache write
+        let isStale = true
+        if (cached) {
+          const cachedAt = cached.headers.get('x-sw-cached-at')
+          isStale = !cachedAt || (Date.now() - Number(cachedAt) > API_TTL_MS)
+        }
+
+        if (cached && !isStale) {
+          // Fresh — return immediately, no background fetch
+          return cached
+        }
+
+        // Stale or missing — fetch from network
+        const fetchPromise = fetch(request).then((res) => {
+          if (res.ok) {
+            // Clone and inject a timestamp header before caching
+            const headers = new Headers(res.headers)
+            headers.set('x-sw-cached-at', String(Date.now()))
+            const stamped = new Response(res.clone().body, { status: res.status, headers })
+            cache.put(request, stamped)
+          }
+          return res
+        }).catch(() => null)
+
+        // If we have a stale cached response, serve it immediately and revalidate in background
+        if (cached) {
+          e.waitUntil(fetchPromise)
+          return cached
+        }
+
+        // No cache at all — wait for network
+        const res = await fetchPromise
+        if (res) return res
+        return new Response(JSON.stringify({ error: 'Offline' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      })
+    )
+    return
+  }
+
+  // ── 4. Navigation (HTML) → NETWORK-FIRST, fall back to cached shell ──────────
+  if (request.mode === 'navigate') {
+    e.respondWith(
+      fetch(request)
+        .then((res) => {
+          if (res.ok) {
+            caches.open(CACHE_PAGES).then((c) => c.put(request, res.clone()))
+          }
+          return res
+        })
+        .catch(async () => {
+          const cached = await caches.match(request, { cacheName: CACHE_PAGES })
+          if (cached) return cached
           return new Response(OFFLINE_PAGE, {
             status: 200,
             headers: { 'Content-Type': 'text/html; charset=utf-8' },
           })
+        })
+    )
+    return
+  }
+
+  // ── 5. Everything else → NETWORK-FIRST with generic cache fallback ────────────
+  e.respondWith(
+    fetch(request)
+      .then((res) => {
+        if (res.ok) {
+          caches.open(CACHE_PAGES).then((c) => c.put(request, res.clone()))
         }
+        return res
+      })
+      .catch(async () => {
         const cached = await caches.match(request)
         if (cached) return cached
         return new Response('Offline', { status: 503 })

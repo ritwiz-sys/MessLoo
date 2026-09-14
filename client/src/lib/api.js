@@ -2,6 +2,44 @@ import { getSession, getUserId } from './auth'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
+// ── Response cache (menus + predictions) ──────────────────────────────────────
+// Two-tier: in-memory Map for the current tab session (instant),
+// localStorage for persistence across navigations (5-min TTL).
+const MEM_CACHE  = new Map()
+const CACHE_TTL  = 5 * 60 * 1000   // 5 minutes
+
+function lsGet(key) {
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return null
+    const { data, ts } = JSON.parse(raw)
+    if (Date.now() - ts > CACHE_TTL) { localStorage.removeItem(key); return null }
+    return data
+  } catch { return null }
+}
+
+function lsSet(key, data) {
+  try { localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() })) } catch {}
+}
+
+/** Fetch with caching. `cacheKey` opts in; omit to skip. */
+async function cachedFetch(cacheKey, fetcher) {
+  if (cacheKey) {
+    if (MEM_CACHE.has(cacheKey)) return MEM_CACHE.get(cacheKey)
+    const lsCached = lsGet(cacheKey)
+    if (lsCached !== null) { MEM_CACHE.set(cacheKey, lsCached); return lsCached }
+  }
+  const result = await fetcher()
+  if (cacheKey) { MEM_CACHE.set(cacheKey, result); lsSet(cacheKey, result) }
+  return result
+}
+
+/** Invalidate a cache key (call after admin POSTs a menu). */
+export function invalidateCache(cacheKey) {
+  MEM_CACHE.delete(cacheKey)
+  try { localStorage.removeItem(cacheKey) } catch {}
+}
+
 function buildHeaders(extra = {}) {
   const session = getSession()
   const headers = {
@@ -43,7 +81,8 @@ export const api = {
   getMenus: ({ date, block_category, menu_type }) => {
     let url = `/menus?date=${encodeURIComponent(date)}&block_category=${encodeURIComponent(block_category)}`
     if (menu_type) url += `&menu_type=${encodeURIComponent(menu_type)}`
-    return apiFetch(url)
+    const cacheKey = `api_menus_${date}_${block_category}_${menu_type || 'all'}`
+    return cachedFetch(cacheKey, () => apiFetch(url))
   },
 
   addMenu: (body) => apiFetch('/menus', { method: 'POST', body: JSON.stringify(body) }),
@@ -67,7 +106,10 @@ export const api = {
   askChat: (question) =>
     apiFetch('/chat', { method: 'POST', body: JSON.stringify({ question }) }),
 
-  getPredictionsToday: () => apiFetch('/predict/today'),
+  getPredictionsToday: () => {
+    const today = new Date().toISOString().slice(0, 10)
+    return cachedFetch(`api_predict_${today}`, () => apiFetch('/predict/today'))
+  },
 
   getConversations: () => apiFetch('/conversations'),
 
