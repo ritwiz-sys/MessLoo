@@ -59,6 +59,14 @@ function getNextMeal() {
   return null
 }
 
+function shiftDate(iso, delta) {
+  const [y, m, d] = iso.split('-').map(Number)
+  const dt = new Date(y, m - 1, d)
+  dt.setDate(dt.getDate() + delta)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`
+}
+
 function popPendingFeedback() {
   try {
     const stored = JSON.parse(localStorage.getItem('messloo_pending_feedback') || '[]')
@@ -276,7 +284,7 @@ function SegmentedControl({ value, onChange, options }) {
           top: 4, bottom: 4,
           left: `calc(4px + ${idx} * (100% - 8px) / ${n})`,
           width: `calc((100% - 8px) / ${n})`,
-          background: 'var(--seg-active-bg)',
+          background: 'linear-gradient(135deg, #FFB830, #E6A000)',
           borderRadius: 100,
           transition: 'left 0.22s cubic-bezier(0.4,0,0.2,1)',
           boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
@@ -294,7 +302,7 @@ function SegmentedControl({ value, onChange, options }) {
             padding: '9px 8px',
             borderRadius: 100,
             fontSize: 13, fontWeight: 700,
-            color: value === o.key ? 'var(--seg-active-text)' : 'var(--seg-inactive-text)',
+            color: value === o.key ? '#1a1200' : 'var(--seg-inactive-text)',
             transition: 'color 0.22s',
             background: 'none', border: 'none', cursor: 'pointer',
             WebkitTapHighlightColor: 'transparent',
@@ -597,6 +605,8 @@ export default function StudentDashboard() {
   const [menuType, setMenuType]               = useState('veg')
   const [showAiChat, setShowAiChat]           = useState(false)
   const [selectedDate, setSelectedDate]       = useState(() => todayISO())
+  const [showCalendar, setShowCalendar]       = useState(false)
+  const [showMenu, setShowMenu]               = useState(false)
 
   const today    = useMemo(() => todayISO(), [])
   const nextMeal = getNextMeal()
@@ -733,70 +743,222 @@ export default function StudentDashboard() {
         <DashboardAiChat onClose={() => setShowAiChat(false)} />
       )}
 
-      {/* ── Header — scrolls with page, blends into background ── */}
-      <header
-        className="px-5 pb-4 max-w-lg mx-auto w-full"
-        style={{
-          paddingTop: 'max(52px, calc(env(safe-area-inset-top, 0px) + 14px))',
-          background: 'transparent',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
-        }}
-      >
-
-        {/* Top row: greeting + controls */}
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <p
-              className="text-[11px] font-bold tracking-[0.14em] uppercase"
-              style={{ color: 'var(--greeting-color)' }}
-            >
-              {getGreeting()}
-            </p>
-            <h1
-              className="mt-0.5 leading-none truncate"
-              style={{ fontSize: 30, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
-            >
-              {firstName ?? 'MessLoo'}
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-2 ml-3 mt-0.5">
-            <button
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
+      {/* ── Hamburger menu overlay ── */}
+      {showMenu && (
+        <div
+          className="fixed inset-0 z-40"
+          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+          onClick={() => setShowMenu(false)}
+        >
+          <div
+            className="absolute max-w-lg left-0 right-0 mx-auto"
+            style={{ top: 'max(84px, calc(env(safe-area-inset-top, 0px) + 70px))', padding: '0 20px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="rounded-2xl overflow-hidden"
               style={{
-                background: 'var(--toggle-bg)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                border: 'var(--card-border)',
-                fontSize: 17,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                background: 'rgba(14,14,20,0.98)',
+                backdropFilter: 'blur(28px)',
+                WebkitBackdropFilter: 'blur(28px)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
               }}
             >
-              {theme === 'dark' ? '☀️' : '🌙'}
+              {blockName && (
+                <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0"
+                    style={{ background: 'rgba(255,184,48,0.12)', color: '#FFB830', border: '1px solid rgba(255,184,48,0.2)' }}
+                  >
+                    {blockName[0]}
+                  </div>
+                  <div>
+                    <p className="font-black text-[14px]" style={{ color: 'rgba(255,255,255,0.92)' }}>Block {blockName}</p>
+                    <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.38)' }}>VIT-AP Hostel Mess</p>
+                  </div>
+                </div>
+              )}
+              <button
+                onClick={() => { toggleTheme(); setShowMenu(false) }}
+                className="w-full flex items-center gap-4 px-5 py-4 transition-colors"
+                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'transparent' }}
+              >
+                <span style={{ fontSize: 20, lineHeight: 1 }}>{theme === 'dark' ? '☀️' : '🌙'}</span>
+                <span className="text-[13px] font-semibold" style={{ color: 'rgba(255,255,255,0.78)' }}>
+                  {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                </span>
+              </button>
+              <button
+                onClick={() => { clearSession(); navigate('/login', { replace: true }) }}
+                className="w-full flex items-center gap-4 px-5 py-4 transition-colors"
+                style={{ background: 'transparent' }}
+              >
+                <span style={{ fontSize: 20, lineHeight: 1 }}>🚪</span>
+                <span className="text-[13px] font-semibold" style={{ color: '#E23744' }}>Sign out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Sticky top bar ── */}
+      <div
+        className="sticky top-0 z-30 w-full"
+        style={{
+          background: 'rgba(13,13,17,0.96)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderBottom: '1px solid rgba(255,184,48,0.08)',
+        }}
+      >
+        <div
+          className="flex items-center justify-between px-5 max-w-lg mx-auto"
+          style={{
+            paddingTop: 'max(46px, calc(env(safe-area-inset-top, 0px) + 12px))',
+            paddingBottom: 12,
+          }}
+        >
+          {/* Hamburger */}
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-90"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
+              <path d="M0 1h18M0 7h12M0 13h18" stroke="rgba(255,255,255,0.72)" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </button>
+
+          {/* Brand */}
+          <div className="text-center select-none">
+            <p style={{ fontSize: 17, fontWeight: 900, color: '#FFB830', letterSpacing: '0.22em', lineHeight: 1.1 }}>
+              MESSLOO
+            </p>
+            <p style={{ fontSize: 8, fontWeight: 600, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.14em', marginTop: 1 }}>
+              VIT – AP MESS
+            </p>
+          </div>
+
+          {/* Bell + avatar */}
+          <div className="flex items-center gap-2">
+            <button
+              className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-90"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <svg width="17" height="19" viewBox="0 0 17 20" fill="none">
+                <path d="M8.5 1C8.5 1 3 4 3 10.5V15.5L1 17.5v1h15v-1l-2-2V10.5C14 4 8.5 1 8.5 1z" fill="rgba(255,255,255,0.52)" />
+                <path d="M6.5 18.5a2 2 0 004 0" stroke="rgba(255,255,255,0.52)" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
             </button>
             <button
-              onClick={() => { clearSession(); navigate('/login', { replace: true }) }}
-              style={{ fontSize: 22, background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
-              title="Sign out"
-            >🚪</button>
+              onClick={() => setShowMenu(!showMenu)}
+              className="w-10 h-10 rounded-full flex items-center justify-center font-black transition-all active:scale-90"
+              style={{
+                background: 'linear-gradient(135deg, #FFB830 0%, #E6A000 100%)',
+                color: '#2a1a00',
+                fontSize: 15,
+                boxShadow: '0 3px 12px rgba(255,184,48,0.45)',
+              }}
+            >
+              {(blockName || firstName || 'M')[0].toUpperCase()}
+            </button>
           </div>
         </div>
 
-        {/* Info pills: block + next meal */}
-        {(blockName || nextMeal) && (
+        {offline && (
+          <div
+            className="text-center py-1.5 text-[10px] font-bold tracking-widest uppercase"
+            style={{ background: 'rgba(255,184,48,0.07)', color: 'rgba(255,184,48,0.8)', borderTop: '1px solid rgba(255,184,48,0.12)' }}
+          >
+            ⚡ Cached menu · Pull to refresh
+          </div>
+        )}
+      </div>
+
+      {/* ── Date navigation ── */}
+      <div className="px-5 pt-4 pb-2 max-w-lg mx-auto w-full">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: 'rgba(255,184,48,0.65)' }}>
+              {isToday ? '● Today' : '▷ Viewing'}
+            </p>
+            <h2
+              className="font-black leading-tight mt-0.5"
+              style={{ fontSize: 21, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}
+            >
+              {formattedSelectedDate}
+            </h2>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setShowCalendar(!showCalendar)}
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90"
+              style={{
+                background: showCalendar ? 'rgba(255,184,48,0.14)' : 'var(--toggle-bg)',
+                border: showCalendar ? '1px solid rgba(255,184,48,0.35)' : 'var(--card-border)',
+                color: showCalendar ? '#FFB830' : 'var(--text-muted)',
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="4" width="18" height="17" rx="3" stroke="currentColor" strokeWidth="2" />
+                <path d="M3 9h18" stroke="currentColor" strokeWidth="2" />
+                <path d="M8 2v4M16 2v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="8.5" cy="14" r="1.3" fill="currentColor" />
+                <circle cx="12" cy="14" r="1.3" fill="currentColor" />
+                <circle cx="15.5" cy="14" r="1.3" fill="currentColor" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setSelectedDate(shiftDate(selectedDate, -1))}
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90"
+              style={{ background: 'var(--toggle-bg)', border: 'var(--card-border)', color: 'var(--text-muted)' }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setSelectedDate(shiftDate(selectedDate, 1))}
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90"
+              style={{ background: 'var(--toggle-bg)', border: 'var(--card-border)', color: 'var(--text-muted)' }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            {!isToday && (
+              <button
+                onClick={() => { setSelectedDate(today); setShowCalendar(false) }}
+                className="text-[10px] font-bold px-2.5 py-1.5 rounded-xl transition-all active:scale-95"
+                style={{ background: 'rgba(255,184,48,0.12)', color: '#FFB830', border: '1px solid rgba(255,184,48,0.25)' }}
+              >
+                Today
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Collapsible calendar strip */}
+        {showCalendar && (
+          <div className="mt-3">
+            <CalendarStrip
+              selectedDate={selectedDate}
+              onSelect={(d) => { setSelectedDate(d); setShowCalendar(false) }}
+            />
+          </div>
+        )}
+
+        {/* Info pills */}
+        {(blockName || (nextMeal && isToday)) && (
           <div className="flex items-center gap-2 mt-3 flex-wrap">
             {blockName && (
               <span
                 className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold"
                 style={{
-                  background: 'var(--card-bg)',
-                  backdropFilter: 'var(--card-blur)',
-                  WebkitBackdropFilter: 'var(--card-blur)',
-                  border: 'var(--card-border)',
-                  color: 'var(--text-secondary)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  background: 'rgba(255,184,48,0.08)',
+                  color: '#FFB830',
+                  border: '1px solid rgba(255,184,48,0.18)',
                 }}
               >
                 🏠 {blockName}{cateringCompany ? ` · ${cateringCompany}` : ''}
@@ -809,7 +971,6 @@ export default function StudentDashboard() {
                   background: 'rgba(226,55,68,0.08)',
                   color: '#E23744',
                   border: '1px solid rgba(226,55,68,0.2)',
-                  boxShadow: '0 2px 8px rgba(226,55,68,0.08)',
                 }}
               >
                 <span className="w-1.5 h-1.5 rounded-full shrink-0 animate-pulse" style={{ background: '#E23744' }} />
@@ -819,59 +980,29 @@ export default function StudentDashboard() {
           </div>
         )}
 
-        {/* Calendar strip */}
-        <div className="mt-4">
-          <CalendarStrip selectedDate={selectedDate} onSelect={setSelectedDate} />
-        </div>
-
         {/* Segmented control */}
         <div className="mt-3">
           <SegmentedControl value={menuType} onChange={setMenuType} options={MENU_TYPES} />
-        </div>
-      </header>
-
-      {/* ── Section title ── */}
-      <div className="px-5 pt-4 pb-2 max-w-lg mx-auto w-full">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[15px] font-black" style={{ color: 'var(--text-primary)' }}>
-            {isToday ? "Today's Menu" : formattedSelectedDate}
-          </h2>
-          {!isToday && (
-            <button
-              onClick={() => setSelectedDate(today)}
-              className="text-[11px] font-bold px-3 py-1 rounded-full transition-all active:scale-95"
-              style={{
-                background: 'rgba(226,55,68,0.10)',
-                color: '#E23744',
-                border: '1px solid rgba(226,55,68,0.25)',
-                boxShadow: '0 2px 8px rgba(226,55,68,0.10)',
-              }}
-            >
-              ← Today
-            </button>
-          )}
         </div>
       </div>
 
       {/* ── Error banners ── */}
       {(profileError || error) && (
         <div
-          className="mx-5 max-w-lg mb-3 rounded-2xl p-3 text-sm font-medium"
+          className="mx-5 max-w-lg mb-2 rounded-2xl p-3 text-sm font-medium"
           style={{
             background: 'var(--error-bg)',
             color: 'var(--error-color)',
             border: '1px solid var(--error-border)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
           }}
         >
           {profileError || error}
         </div>
       )}
 
-      {/* ── Meal cards ── */}
+      {/* ── Meal cards (2×2 grid) ── */}
       <main className="px-5 pb-28 max-w-lg mx-auto w-full">
-        <div className="flex flex-col gap-3 mt-1">
+        <div className="grid grid-cols-2 gap-3 mt-1">
           {profileLoading || loading
             ? MEAL_ORDER.map((m) => <SkeletonCard key={m} />)
             : MEAL_ORDER.map((mt) => {
@@ -891,11 +1022,11 @@ export default function StudentDashboard() {
               })
           }
 
-          {/* ── Ask Mess AI banner ── */}
+          {/* ── Ask Mess AI banner (full width) ── */}
           <button
             type="button"
             onClick={() => setShowAiChat(true)}
-            className="w-full text-left transition-all active:scale-[0.98] relative overflow-hidden"
+            className="col-span-2 w-full text-left transition-all active:scale-[0.98] relative overflow-hidden"
             style={{
               background: 'linear-gradient(135deg, #6D28D9 0%, #4F46E5 60%, #7C3AED 100%)',
               borderRadius: 20,
