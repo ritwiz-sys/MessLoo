@@ -4,18 +4,29 @@ import { setSession } from '../lib/auth'
 import { api } from '../lib/api'
 
 // ── Step machine ──────────────────────────────────────────────────────────────
-// 'role'   → pick Student or Admin
-// 'block'  → student picks MH or LH
-// 'admin'  → admin enters password
+// 'role'     → pick Student or Admin
+// 'block'    → student picks MH or LH (hostel category)
+// 'subblock' → student picks specific block (MH1-MH7 or LH1-LH4)
+// 'admin'    → admin enters password
+
+const MH_BLOCKS = ['MH1', 'MH2', 'MH3', 'MH4', 'MH5', 'MH6', 'MH7']
+const LH_BLOCKS = ['LH1', 'LH2', 'LH3', 'LH4']
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const [step, setStep]       = useState('role')   // 'role' | 'block' | 'admin'
+  const [step, setStep]         = useState('role')   // 'role' | 'block' | 'subblock' | 'admin'
+  const [blockCat, setBlockCat] = useState(null)     // 'MH' | 'LH'
   const [password, setPassword] = useState('')
-  const [error, setError]     = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [error, setError]       = useState(null)
+  const [loading, setLoading]   = useState(false)
 
-  // Student chose a block
+  // Student chose a hostel category (MH / LH) — go to subblock step
+  function handleCategory(cat) {
+    setBlockCat(cat)
+    setStep('subblock')
+  }
+
+  // Student chose a specific block (e.g. 'MH3')
   function handleBlock(block) {
     setSession({ role: 'student', block })
     navigate('/dashboard', { replace: true })
@@ -102,7 +113,7 @@ export default function LoginPage() {
           </>
         )}
 
-        {/* ── STEP: block ── */}
+        {/* ── STEP: block (category) ── */}
         {step === 'block' && (
           <>
             <button
@@ -116,18 +127,18 @@ export default function LoginPage() {
               Pick your mess
             </h2>
             <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-              Which hostel block are you in?
+              Which hostel are you in?
             </p>
             <div className="flex flex-col gap-3">
               <button
-                onClick={() => handleBlock('MH')}
+                onClick={() => handleCategory('MH')}
                 className="w-full py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3"
                 style={{ background: '#E23744', color: '#fff', boxShadow: '0 4px 16px rgba(226,55,68,0.25)' }}
               >
                 🏠 MH — Men's Hostel
               </button>
               <button
-                onClick={() => handleBlock('LH')}
+                onClick={() => handleCategory('LH')}
                 className="w-full py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3"
                 style={{
                   background: 'var(--toggle-bg)',
@@ -137,6 +148,37 @@ export default function LoginPage() {
               >
                 🏡 LH — Ladies' Hostel
               </button>
+            </div>
+          </>
+        )}
+
+        {/* ── STEP: subblock (specific block number) ── */}
+        {step === 'subblock' && (
+          <>
+            <button
+              onClick={() => { setStep('block'); setBlockCat(null) }}
+              className="mb-4 text-sm font-semibold flex items-center gap-1"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              ← Back
+            </button>
+            <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+              {blockCat === 'MH' ? '🏠 Men\'s Hostel' : '🏡 Ladies\' Hostel'}
+            </h2>
+            <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
+              Select your block
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              {(blockCat === 'MH' ? MH_BLOCKS : LH_BLOCKS).map(block => (
+                <button
+                  key={block}
+                  onClick={() => handleBlock(block)}
+                  className="py-4 rounded-2xl font-bold text-base"
+                  style={{ background: '#E23744', color: '#fff', boxShadow: '0 4px 12px rgba(226,55,68,0.25)' }}
+                >
+                  {block}
+                </button>
+              ))}
             </div>
           </>
         )}

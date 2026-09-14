@@ -21,11 +21,14 @@ async function getOrCreateUser(externalUserId, blockCategory = 'MH') {
 
   if (existing) return existing
 
+  // Strip trailing digits so 'MH3' → 'MH', 'LH1' → 'LH'
+  const category = (blockCategory || 'MH').replace(/\d+$/, '') || 'MH'
+
   // Auto-create: pick any block for this category to assign as home block
   const { data: block } = await supabase
     .from('blocks')
     .select('id')
-    .eq('block_category', blockCategory)
+    .eq('block_category', category)
     .limit(1)
     .single()
 
