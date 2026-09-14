@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import { useAuth, UserButton } from '@clerk/react'
 import { api } from '../lib/api'
 import { useUserContext } from '../context/UserContext'
+import { clearSession } from '../lib/auth'
+import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../hooks/useTheme'
 import MealCard from '../components/MealCard'
 import BottomTabBar from '../components/BottomTabBar'
@@ -435,7 +436,7 @@ function Bubble({ role, content }) {
   )
 }
 
-function DashboardAiChat({ onClose, getToken }) {
+function DashboardAiChat({ onClose }) {
   const [messages, setMessages] = useState([
     { role: 'assistant', content: 'Hey! 👋 Ask me anything about the mess — menu, timings, specials, or which block has better food!' },
   ])
@@ -454,8 +455,7 @@ function DashboardAiChat({ onClose, getToken }) {
     setMessages((m) => [...m, { role: 'user', content: q }])
     setThinking(true)
     try {
-      const token = await getToken()
-      const res = await api.askChat(token, q)
+      const res = await api.askChat(q)
       setMessages((m) => [...m, { role: 'assistant', content: res?.answer || res?.reply || "I couldn't get a response. Try again!" }])
     } catch {
       setMessages((m) => [...m, { role: 'assistant', content: 'Mess AI is offline right now. Try again in a moment!' }])
@@ -581,7 +581,7 @@ function DashboardAiChat({ onClose, getToken }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function StudentDashboard() {
-  const { getToken } = useAuth()
+  const navigate = useNavigate()
   const { theme, toggle: toggleTheme } = useTheme()
   const {
     profile, blockCategory, blockName, cateringCompany,
@@ -624,11 +624,11 @@ export default function StudentDashboard() {
     if (entry) setPendingFeedback(entry)
   }, [])
 
-  const fetchAttendance = useCallback(async (menuItems, token) => {
+  const fetchAttendance = useCallback(async (menuItems) => {
     const records = {}
     await Promise.all(menuItems.map(async (menu) => {
       try {
-        const res = await api.getAttendance(token, { menu_id: menu.id })
+        const res = await api.getAttendance({ menu_id: menu.id })
         if (res?.data) records[menu.id] = res.data
       } catch {}
     }))
@@ -654,9 +654,8 @@ export default function StudentDashboard() {
 
     const load = async () => {
       try {
-        const token = await getToken()
         const res = await Promise.race([
-          api.getMenus(token, { date: selectedDate, block_category: blockCategory, menu_type: menuType }),
+          api.getMenus({ date: selectedDate, block_category: blockCategory, menu_type: menuType }),
           new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
         ])
         const menuItems = res?.data || []
@@ -666,7 +665,7 @@ export default function StudentDashboard() {
         setError(null)
         saveToCache(blockCategory, menuType, menuItems)
         if (menuItems.length) {
-          const records = await fetchAttendance(menuItems, token)
+          const records = await fetchAttendance(menuItems)
           if (!cancelled) setAttendanceMap(records)
         }
       } catch {
@@ -683,7 +682,7 @@ export default function StudentDashboard() {
     }
     load()
     return () => { cancelled = true }
-  }, [getToken, selectedDate, blockCategory, menuType, profileLoading, fetchAttendance, loadFromCache, saveToCache])
+  }, [selectedDate, blockCategory, menuType, profileLoading, fetchAttendance, loadFromCache, saveToCache])
 
   const menuByMeal = useMemo(() => {
     const map = {}
@@ -692,20 +691,17 @@ export default function StudentDashboard() {
   }, [menus])
 
   const handleMarkAttendance = async (body) => {
-    const token = await getToken()
-    const res = await api.markAttendance(token, body)
+    const res = await api.markAttendance(body)
     setAttendanceMap((prev) => ({ ...prev, [body.menu_id]: res?.data }))
     return res?.data
   }
 
   const handleSubmitFeedback = async (body) => {
-    const token = await getToken()
-    await api.submitFeedback(token, body)
+    await api.submitFeedback(body)
   }
 
   const handlePostMealFeedback = async (entry, stars) => {
-    const token = await getToken()
-    await api.submitFeedback(token, {
+    await api.submitFeedback({
       menu_id: entry.menuId, meal_date: entry.mealDate, meal_type: entry.mealType,
       category: 'food_quality', description: `Rated ${stars}/5 stars`,
       severity: stars <= 2 ? 'high' : stars === 3 ? 'medium' : 'low',
@@ -734,7 +730,7 @@ export default function StudentDashboard() {
       )}
 
       {showAiChat && (
-        <DashboardAiChat onClose={() => setShowAiChat(false)} getToken={getToken} />
+        <DashboardAiChat onClose={() => setShowAiChat(false)} />
       )}
 
       {/* ── Header — scrolls with page, blends into background ── */}
@@ -780,7 +776,11 @@ export default function StudentDashboard() {
             >
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
-            <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-9 h-9' } }} />
+            <button
+              onClick={() => { clearSession(); navigate('/login', { replace: true }) }}
+              style={{ fontSize: 22, background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+              title="Sign out"
+            >🚪</button>
           </div>
         </div>
 
@@ -884,7 +884,6 @@ export default function StudentDashboard() {
                     attendance={menuItem ? attendanceMap[menuItem.id] : null}
                     onMarkAttendance={handleMarkAttendance}
                     onSubmitFeedback={handleSubmitFeedback}
-                    getToken={getToken}
                     offline={offline}
                     isActive={isToday && mt === nextMeal}
                   />

@@ -115,7 +115,7 @@ function Bubble({ role, content }) {
 // ── AI Chat tab ────────────────────────────────────────────────────────────────
 const CHIPS = ['Is this healthy?', 'Calories estimate?', 'Any allergens?']
 
-function AiChat({ cfg, dishes, getToken }) {
+function AiChat({ cfg, dishes }) {
   const [messages, setMessages] = useState([
     { role: 'assistant', content: `Hi! I can answer anything about today's ${cfg.label} — ingredients, nutrition, alternatives, or anything else. 🍽️` },
   ])
@@ -134,12 +134,10 @@ function AiChat({ cfg, dishes, getToken }) {
     setMessages((m) => [...m, { role: 'user', content: q }])
     setThinking(true)
     try {
-      const token = await getToken()
-      // Include meal context in the question
       const ctx = dishes.length
         ? `[Context: Today's ${cfg.label} includes: ${dishes.join(', ')}] `
         : `[Context: Today's ${cfg.label}] `
-      const res = await api.askChat(token, ctx + q)
+      const res = await api.askChat(ctx + q)
       setMessages((m) => [...m, { role: 'assistant', content: res?.answer || res?.reply || 'Sorry, I couldn\'t get a response.' }])
     } catch {
       setMessages((m) => [...m, { role: 'assistant', content: 'Couldn\'t reach Mess AI right now. Try again!' }])
@@ -280,7 +278,7 @@ function DetailsTab({ cfg, dishes, onConfirm, onSkip, submitting }) {
 }
 
 // ── Popup modal ────────────────────────────────────────────────────────────────
-function MealPopup({ cfg, dishes, onConfirm, onSkip, onClose, submitting, getToken }) {
+function MealPopup({ cfg, dishes, onConfirm, onSkip, onClose, submitting }) {
   const [tab, setTab] = useState('details') // 'details' | 'ai'
 
   // Lock body scroll while popup is open
@@ -366,7 +364,7 @@ function MealPopup({ cfg, dishes, onConfirm, onSkip, onClose, submitting, getTok
         {tab === 'details' ? (
           <DetailsTab cfg={cfg} dishes={dishes} onConfirm={onConfirm} onSkip={onSkip} submitting={submitting} />
         ) : (
-          <AiChat cfg={cfg} dishes={dishes} getToken={getToken} />
+          <AiChat cfg={cfg} dishes={dishes} />
         )}
       </div>
     </div>
@@ -374,7 +372,7 @@ function MealPopup({ cfg, dishes, onConfirm, onSkip, onClose, submitting, getTok
 }
 
 // ── Glassmorphism Full-Width Card ─────────────────────────────────────────────
-export default function MealCard({ mealType, menuItem, attendance, onMarkAttendance, onSubmitFeedback, getToken, offline }) {
+export default function MealCard({ mealType, menuItem, attendance, onMarkAttendance, onSubmitFeedback, offline, isActive }) {
   const [showModal, setShowModal] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
@@ -429,7 +427,6 @@ export default function MealCard({ mealType, menuItem, attendance, onMarkAttenda
           onSkip={doSkip}
           onClose={() => setShowModal(false)}
           submitting={submitting}
-          getToken={getToken}
         />
       )}
 
@@ -499,9 +496,26 @@ export default function MealCard({ mealType, menuItem, attendance, onMarkAttenda
                 }}>✓ EATING</span>
               )}
             </div>
-            <p style={{ fontSize: 18, fontWeight: 900, color: '#FFFFFF', lineHeight: 1.1, letterSpacing: '-0.01em', marginBottom: 3 }}>
-              {cfg.label}
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
+              <p style={{ fontSize: 18, fontWeight: 900, color: '#FFFFFF', lineHeight: 1.1, letterSpacing: '-0.01em', margin: 0 }}>
+                {cfg.label}
+              </p>
+              {isActive && (
+                <span style={{
+                  fontSize: 9, fontWeight: 900, padding: '2px 7px', borderRadius: 100,
+                  background: 'rgba(255,255,255,0.25)', color: '#FFFFFF',
+                  letterSpacing: '0.06em', backdropFilter: 'blur(4px)',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                }}>
+                  <span style={{
+                    width: 6, height: 6, borderRadius: '50%', background: '#fff',
+                    display: 'inline-block',
+                    animation: 'pulse 1.2s ease-in-out infinite',
+                  }} />
+                  NOW
+                </span>
+              )}
+            </div>
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', display: 'flex', alignItems: 'center', gap: 4 }}>
               <span>{cfg.emoji}</span>{cfg.time}
             </p>

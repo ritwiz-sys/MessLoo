@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useAuth, UserButton } from '../lib/clerk'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useUserContext } from '../context/UserContext'
+import { clearSession, getSession } from '../lib/auth'
 import BottomTabBar from '../components/BottomTabBar'
 
 // ── Dish chip ─────────────────────────────────────────────────────────────────
@@ -306,7 +307,8 @@ function BlockSheet({ currentBlockId, onClose, onConfirm }) {
 
 // ── Main ProfilePage ──────────────────────────────────────────────────────────
 export default function ProfilePage() {
-  const { getToken } = useAuth()
+  const navigate = useNavigate()
+  const session = getSession()
   const { profile, blockName, cateringCompany, updateBlock, refetch } = useUserContext()
 
   const [preferences, setPreferences] = useState({ liked_dishes: [], disliked_dishes: [] })
@@ -355,10 +357,9 @@ export default function ProfilePage() {
       }
 
       try {
-        const token = await getToken()
         const [prefsRes, feedRes] = await Promise.all([
-          api.getPreferences(token),
-          api.getFeedback(token),
+          api.getPreferences(),
+          api.getFeedback(),
         ])
         if (!cancelled) {
           const prefs = {
@@ -382,14 +383,13 @@ export default function ProfilePage() {
     }
     load()
     return () => { cancelled = true }
-  }, [getToken])
+  }, [])
 
   const handleLike = async (dishName) => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) return
     setPrefSaving(true)
     try {
-      const token = await getToken()
-      const res = await api.likeDish(token, dishName)
+      const res = await api.likeDish(dishName)
       if (res?.data) {
         setPreferences(res.data)
         try {
@@ -404,8 +404,7 @@ export default function ProfilePage() {
     if (typeof navigator !== 'undefined' && !navigator.onLine) return
     setPrefSaving(true)
     try {
-      const token = await getToken()
-      const res = await api.dislikeDish(token, dishName)
+      const res = await api.dislikeDish(dishName)
       if (res?.data) {
         setPreferences(res.data)
         try {
@@ -421,8 +420,7 @@ export default function ProfilePage() {
     if (!editName.trim()) return
     setSavingProfile(true)
     try {
-      const token = await getToken()
-      await api.updateMe(token, { name: editName.trim(), college_id: editId.trim() || null })
+      await api.updateMe?.({ name: editName.trim(), college_id: editId.trim() || null })
       await refetch()
       setEditing(false)
     } catch { /* ignore */ }
@@ -431,8 +429,7 @@ export default function ProfilePage() {
 
   const handleSubmitFeedback = async (body) => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) return
-    const token = await getToken()
-    const res = await api.submitFeedback(token, body)
+    const res = await api.submitFeedback(body)
     if (res?.data) {
       setFeedbackList((prev) => {
         const newList = [res.data, ...prev]
@@ -461,10 +458,15 @@ export default function ProfilePage() {
         }}
       >
         <div className="max-w-lg mx-auto flex items-center gap-4">
-          <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-14 h-14' } }} />
-          <div className="min-w-0">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+            style={{ background: '#E23744' }}
+          >
+            🎓
+          </div>
+          <div className="min-w-0 flex-1">
             <h1 className="text-xl font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>
-              {profile?.name || 'My Profile'}
+              {session?.block || 'Student'}
             </h1>
             {profile?.college_id && (
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{profile.college_id}</p>
@@ -711,6 +713,17 @@ export default function ProfilePage() {
           onSubmit={handleSubmitFeedback}
         />
       )}
+
+      {/* Sign out */}
+      <div className="max-w-lg mx-auto px-5 pb-32">
+        <button
+          onClick={() => { clearSession(); navigate('/login', { replace: true }) }}
+          className="w-full py-3 rounded-2xl font-bold text-sm"
+          style={{ background: 'var(--error-bg)', color: 'var(--error-color)', border: '1px solid var(--error-border)' }}
+        >
+          Sign out
+        </button>
+      </div>
 
       <BottomTabBar />
     </div>

@@ -3,7 +3,6 @@ const router = express.Router()
 const Groq = require('groq-sdk')
 const verifyAuth = require('../middleware/auth')
 const { queryRAG, pickModel } = require('../rag/query')
-const supabase = require('../supabase')
 
 router.post('/', verifyAuth, async (req, res) => {
   const { question } = req.body
@@ -12,22 +11,11 @@ router.post('/', verifyAuth, async (req, res) => {
     return res.status(400).json({ error: 'Question is required' })
   }
 
-  // Get user's block category and mess type
-  const { data: user, error: userError } = await supabase
-    .from('users')
-    .select('*, blocks(*)')
-    .eq('clerk_user_id', req.userId)
-    .single()
-
-  if (userError || !user) {
-    return res.status(404).json({ error: 'User not found' })
-  }
-
-  const blockCategory = user.blocks?.block_category || 'MH'
-  const messType = user.blocks?.mess_type || null
+  // Block comes directly from the request header (set by client from localStorage)
+  const blockCategory = req.block || 'MH'
 
   try {
-    const result = await queryRAG(question, blockCategory, messType, [])
+    const result = await queryRAG(question, blockCategory, null, [])
     res.json(result)
   } catch (error) {
     console.error('RAG error:', error.message)

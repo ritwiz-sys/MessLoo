@@ -1,85 +1,196 @@
-import { SignIn } from '../lib/clerk'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { setSession } from '../lib/auth'
+import { api } from '../lib/api'
 
-const clerkAppearance = {
-  variables: {
-    colorPrimary: '#E23744',
-    colorBackground: '#FFFFFF',
-    colorInputBackground: '#FFF8F0',
-    colorInputText: '#1C1C1E',
-    colorText: '#1C1C1E',
-    colorTextSecondary: '#6B6B6B',
-    colorDanger: '#E23744',
-    borderRadius: '0.875rem',
-    fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-  },
-  elements: {
-    rootBox: 'w-full',
-    card: 'shadow-none border-0 bg-transparent',
-    headerTitle: 'text-[#1C1C1E] font-bold',
-    headerSubtitle: 'text-[#6B6B6B]',
-    socialButtonsBlockButton: 'border border-[#F0E6D3] hover:bg-[#FFF8F0] text-[#1C1C1E] font-medium',
-    formButtonPrimary: 'font-semibold',
-    formFieldInput: 'border border-[#F0E6D3] text-[#1C1C1E] focus:border-[#E23744]',
-    formFieldLabel: 'text-[#1C1C1E] font-medium text-sm',
-    footerActionText: 'text-[#6B6B6B]',
-    footerActionLink: 'text-[#E23744] font-semibold hover:text-[#c5313d]',
-    dividerLine: 'bg-[#F0E6D3]',
-    dividerText: 'text-[#6B6B6B]',
-  },
-}
+// ── Step machine ──────────────────────────────────────────────────────────────
+// 'role'   → pick Student or Admin
+// 'block'  → student picks MH or LH
+// 'admin'  → admin enters password
 
 export default function LoginPage() {
+  const navigate = useNavigate()
+  const [step, setStep]       = useState('role')   // 'role' | 'block' | 'admin'
+  const [password, setPassword] = useState('')
+  const [error, setError]     = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  // Student chose a block
+  function handleBlock(block) {
+    setSession({ role: 'student', block })
+    navigate('/dashboard', { replace: true })
+  }
+
+  // Admin submitted password
+  async function handleAdminLogin(e) {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+    try {
+      const { token } = await api.adminLogin(password)
+      setSession({ role: 'admin', block: 'MH', adminToken: token })
+      navigate('/admin', { replace: true })
+    } catch (err) {
+      setError(err.message || 'Wrong password')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div
-      className="min-h-screen w-full flex flex-col items-center justify-center px-4 py-10"
+      className="min-h-screen flex flex-col items-center justify-center px-6"
       style={{ background: 'transparent' }}
     >
-      {/* Decorative blobs */}
-      <div
-        className="absolute top-0 left-0 w-72 h-72 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: '#E23744', transform: 'translate(-40%, -40%)' }}
-      />
-      <div
-        className="absolute bottom-0 right-0 w-64 h-64 rounded-full opacity-15 blur-3xl pointer-events-none"
-        style={{ background: '#FF8C00', transform: 'translate(40%, 40%)' }}
-      />
-
       {/* Logo */}
-      <div className="relative mb-6 flex flex-col items-center gap-2 text-center">
+      <div className="mb-10 flex flex-col items-center gap-3">
         <div
-          className="h-16 w-16 rounded-3xl flex items-center justify-center text-3xl mb-1"
-          style={{ background: '#E23744', boxShadow: '0 8px 24px rgba(226,55,68,0.3)' }}
+          className="h-20 w-20 rounded-3xl flex items-center justify-center text-4xl"
+          style={{ background: '#E23744', boxShadow: '0 12px 32px rgba(226,55,68,0.30)' }}
         >
           🍱
         </div>
-        <h1 className="text-3xl font-extrabold" style={{ color: 'var(--text-primary)' }}>MessLoo</h1>
+        <h1 className="text-3xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>
+          MessLoo
+        </h1>
         <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-          Your VIT-AP mess, reimagined.
+          VIT-AP mess companion
         </p>
       </div>
 
       {/* Card */}
       <div
-        className="relative w-full max-w-sm rounded-3xl p-6"
+        className="w-full max-w-sm rounded-3xl p-7"
         style={{
-          background: '#FFFFFF',
-          border: '1px solid #F0E6D3',
-          boxShadow: '0 8px 40px rgba(226,55,68,0.1)',
+          background: 'var(--card-bg)',
+          backdropFilter: 'var(--card-blur)',
+          WebkitBackdropFilter: 'var(--card-blur)',
+          border: 'var(--card-border)',
+          boxShadow: 'var(--card-shadow)',
         }}
       >
-        <SignIn
-          routing="path"
-          path="/login"
-          signUpUrl="/login"
-          forceRedirectUrl="/"
-          fallbackRedirectUrl="/"
-          appearance={clerkAppearance}
-        />
-      </div>
 
-      <p className="relative mt-6 text-xs" style={{ color: 'var(--text-muted)' }}>
-        © {new Date().getFullYear()} MessLoo · VIT-AP
-      </p>
+        {/* ── STEP: role ── */}
+        {step === 'role' && (
+          <>
+            <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+              Who are you?
+            </h2>
+            <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
+              Choose how you'd like to continue
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => setStep('block')}
+                className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3"
+                style={{ background: '#E23744', color: '#fff', boxShadow: '0 4px 16px rgba(226,55,68,0.25)' }}
+              >
+                🎓 Student
+              </button>
+              <button
+                onClick={() => setStep('admin')}
+                className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3"
+                style={{
+                  background: 'var(--toggle-bg)',
+                  color: 'var(--text-primary)',
+                  border: 'var(--card-border)',
+                }}
+              >
+                🔑 Admin
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* ── STEP: block ── */}
+        {step === 'block' && (
+          <>
+            <button
+              onClick={() => setStep('role')}
+              className="mb-4 text-sm font-semibold flex items-center gap-1"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              ← Back
+            </button>
+            <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+              Pick your mess
+            </h2>
+            <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
+              Which hostel block are you in?
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => handleBlock('MH')}
+                className="w-full py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3"
+                style={{ background: '#E23744', color: '#fff', boxShadow: '0 4px 16px rgba(226,55,68,0.25)' }}
+              >
+                🏠 MH — Men's Hostel
+              </button>
+              <button
+                onClick={() => handleBlock('LH')}
+                className="w-full py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3"
+                style={{
+                  background: 'var(--toggle-bg)',
+                  color: 'var(--text-primary)',
+                  border: 'var(--card-border)',
+                }}
+              >
+                🏡 LH — Ladies' Hostel
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* ── STEP: admin ── */}
+        {step === 'admin' && (
+          <>
+            <button
+              onClick={() => { setStep('role'); setError(null); setPassword('') }}
+              className="mb-4 text-sm font-semibold flex items-center gap-1"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              ← Back
+            </button>
+            <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+              Admin login
+            </h2>
+            <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
+              Enter the admin password to continue
+            </p>
+            <form onSubmit={handleAdminLogin} className="flex flex-col gap-3">
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoFocus
+                className="w-full px-4 py-3 rounded-xl text-base font-medium outline-none"
+                style={{
+                  background: 'var(--input-bg)',
+                  border: 'var(--card-border)',
+                  color: 'var(--text-primary)',
+                }}
+              />
+              {error && (
+                <p className="text-sm font-semibold" style={{ color: 'var(--error-color)' }}>
+                  {error}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={loading || !password}
+                className="w-full py-3 rounded-2xl font-bold text-base"
+                style={{
+                  background: loading || !password ? 'rgba(226,55,68,0.4)' : '#E23744',
+                  color: '#fff',
+                }}
+              >
+                {loading ? 'Checking…' : 'Enter'}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
     </div>
   )
 }

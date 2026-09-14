@@ -6,17 +6,20 @@ const cors = require('cors')
 const app = express()
 const PORT = process.env.PORT || 3000
 
-app.use(cors({
+const corsOptions = {
   origin: [
     'http://localhost:5173',
     /\.netlify\.app$/,
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}))
-app.options('/{*path}', cors())
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'x-block'],
+  credentials: true,
+}
+app.use(cors(corsOptions))
+app.options('*', cors(corsOptions))
 app.use(express.json())
 
+const authRouter    = require('./routes/auth')
 const blocksRouter = require('./routes/blocks')
 const usersRouter = require('./routes/users')
 const menusRouter = require('./routes/menus')
@@ -28,6 +31,7 @@ const preferencesRouter = require('./routes/preferences')
 const feedbackRouter = require('./routes/feedback')
 const drumLogsRouter = require('./routes/drumLogs')
 
+app.use('/auth',   authRouter)
 app.use('/blocks', blocksRouter)
 app.use('/users', usersRouter)
 app.use('/menus', menusRouter)

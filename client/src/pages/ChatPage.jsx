@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { useAuth } from '../lib/clerk'
 import { api } from '../lib/api'
 import BottomTabBar from '../components/BottomTabBar'
 
@@ -67,7 +66,6 @@ function Bubble({ role, content }) {
 
 // ── Main ChatPage ─────────────────────────────────────────────────────────────
 export default function ChatPage() {
-  const { getToken } = useAuth()
   const [messages, setMessages] = useState([])
   const [question, setQuestion] = useState('')
   const [sending, setSending] = useState(false)
@@ -94,8 +92,7 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, userMsg])
 
     try {
-      const token = await getToken()
-      const res = await api.askChat(token, trimmed)
+      const res = await api.askChat(trimmed)
       const answer = res?.data?.answer || res?.answer || res?.response || "Sorry, I couldn't get a response."
       const sources = res?.data?.sources || res?.sources || []
       setMessages((prev) => [

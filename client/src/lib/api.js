@@ -1,33 +1,33 @@
+import { getSession, getUserId } from './auth'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
-/**
- * Thin fetch wrapper that attaches the Clerk JWT and base URL.
- * @param {string} path - e.g. '/menus?date=2026-06-24&block_category=MH'
- * @param {string|null} token - Clerk JWT from getToken()
- * @param {object} [options]
- */
-export async function apiFetch(path, token, options = {}) {
+function buildHeaders(extra = {}) {
+  const session = getSession()
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-user-id': getUserId(),
+    'x-block': session?.block || 'MH',
+    ...extra,
+  }
+  if (session?.role === 'admin' && session?.adminToken) {
+    headers['Authorization'] = `Bearer ${session.adminToken}`
+  }
+  return headers
+}
+
+export async function apiFetch(path, options = {}) {
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     throw new Error('You are offline. Please check your internet connection.')
   }
 
-  const headers = {
-    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...options.headers,
-  }
-
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
-    headers,
+    headers: buildHeaders(options.headers),
   })
 
   let payload = null
-  try {
-    payload = await response.json()
-  } catch {
-    payload = null
-  }
+  try { payload = await response.json() } catch { payload = null }
 
   if (!response.ok) {
     const message = payload?.error || `Request failed with status ${response.status}`
@@ -38,88 +38,76 @@ export async function apiFetch(path, token, options = {}) {
 }
 
 export const api = {
-  getBlocks: () => apiFetch('/blocks', null),
+  getBlocks: () => apiFetch('/blocks'),
 
-  syncUser: (token, body) =>
-    apiFetch('/users/sync', token, { method: 'POST', body: JSON.stringify(body) }),
-
-  getMe: (token) => apiFetch('/users/me', token),
-
-  updateMe: (token, body) =>
-    apiFetch('/users/me', token, { method: 'PATCH', body: JSON.stringify(body) }),
-
-  getMenus: (token, { date, block_category, menu_type }) => {
+  getMenus: ({ date, block_category, menu_type }) => {
     let url = `/menus?date=${encodeURIComponent(date)}&block_category=${encodeURIComponent(block_category)}`
-    if (menu_type) {
-      url += `&menu_type=${encodeURIComponent(menu_type)}`
-    }
-    return apiFetch(url, token)
+    if (menu_type) url += `&menu_type=${encodeURIComponent(menu_type)}`
+    return apiFetch(url)
   },
 
-  addMenu: (token, body) =>
-    apiFetch('/menus', token, { method: 'POST', body: JSON.stringify(body) }),
+  addMenu: (body) => apiFetch('/menus', { method: 'POST', body: JSON.stringify(body) }),
 
-  markAttendance: (token, body) =>
-    apiFetch('/attendance', token, { method: 'POST', body: JSON.stringify(body) }),
+  markAttendance: (body) => apiFetch('/attendance', { method: 'POST', body: JSON.stringify(body) }),
 
-  getAttendance: (token, { menu_id }) =>
-    apiFetch(`/attendance?menu_id=${encodeURIComponent(menu_id)}`, token),
+  getAttendance: ({ menu_id }) =>
+    apiFetch(`/attendance?menu_id=${encodeURIComponent(menu_id)}`),
 
-  getAttendanceSummary: (token, menuId) =>
-    apiFetch(`/attendance/summary?menu_id=${encodeURIComponent(menuId)}`, token),
+  getAttendanceSummary: (menuId) =>
+    apiFetch(`/attendance/summary?menu_id=${encodeURIComponent(menuId)}`),
 
-  addBlock: (token, body) =>
-    apiFetch('/blocks', token, { method: 'POST', body: JSON.stringify(body) }),
+  addBlock: (body) => apiFetch('/blocks', { method: 'POST', body: JSON.stringify(body) }),
 
-  updateBlock: (token, id, body) =>
-    apiFetch(`/blocks/${encodeURIComponent(id)}`, token, { method: 'PATCH', body: JSON.stringify(body) }),
+  updateBlock: (id, body) =>
+    apiFetch(`/blocks/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(body) }),
 
-  deleteBlock: (token, id) =>
-    apiFetch(`/blocks/${encodeURIComponent(id)}`, token, { method: 'DELETE' }),
+  deleteBlock: (id) =>
+    apiFetch(`/blocks/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
-  askChat: (token, question) =>
-    apiFetch('/chat', token, { method: 'POST', body: JSON.stringify({ question }) }),
+  askChat: (question) =>
+    apiFetch('/chat', { method: 'POST', body: JSON.stringify({ question }) }),
 
-  getPredictionsToday: (token) => apiFetch('/predict/today', token),
+  getPredictionsToday: () => apiFetch('/predict/today'),
 
-  // ── Conversations ──────────────────────────────────────────────────────────
-  getConversations: (token) => apiFetch('/conversations', token),
+  getConversations: () => apiFetch('/conversations'),
 
-  createConversation: (token, body) =>
-    apiFetch('/conversations', token, { method: 'POST', body: JSON.stringify(body) }),
+  createConversation: (body) =>
+    apiFetch('/conversations', { method: 'POST', body: JSON.stringify(body) }),
 
-  getConversation: (token, id) => apiFetch(`/conversations/${encodeURIComponent(id)}`, token),
+  getConversation: (id) => apiFetch(`/conversations/${encodeURIComponent(id)}`),
 
-  deleteConversation: (token, id) =>
-    apiFetch(`/conversations/${encodeURIComponent(id)}`, token, { method: 'DELETE' }),
+  deleteConversation: (id) =>
+    apiFetch(`/conversations/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
-  getMessages: (token, conversationId) =>
-    apiFetch(`/conversations/${encodeURIComponent(conversationId)}/messages`, token),
+  getMessages: (conversationId) =>
+    apiFetch(`/conversations/${encodeURIComponent(conversationId)}/messages`),
 
-  sendMessage: (token, conversationId, question) =>
-    apiFetch(`/conversations/${encodeURIComponent(conversationId)}/messages`, token, {
+  sendMessage: (conversationId, question) =>
+    apiFetch(`/conversations/${encodeURIComponent(conversationId)}/messages`, {
       method: 'POST',
       body: JSON.stringify({ question }),
     }),
 
-  // ── Preferences ───────────────────────────────────────────────────────────
-  getPreferences: (token) => apiFetch('/preferences', token),
+  getPreferences: () => apiFetch('/preferences'),
 
-  upsertPreferences: (token, body) =>
-    apiFetch('/preferences', token, { method: 'POST', body: JSON.stringify(body) }),
+  upsertPreferences: (body) =>
+    apiFetch('/preferences', { method: 'POST', body: JSON.stringify(body) }),
 
-  likeDish: (token, dishName) =>
-    apiFetch('/preferences/like', token, { method: 'POST', body: JSON.stringify({ dish_name: dishName }) }),
+  likeDish: (dishName) =>
+    apiFetch('/preferences/like', { method: 'POST', body: JSON.stringify({ dish_name: dishName }) }),
 
-  dislikeDish: (token, dishName) =>
-    apiFetch('/preferences/dislike', token, { method: 'POST', body: JSON.stringify({ dish_name: dishName }) }),
+  dislikeDish: (dishName) =>
+    apiFetch('/preferences/dislike', { method: 'POST', body: JSON.stringify({ dish_name: dishName }) }),
 
-  // ── Feedback ──────────────────────────────────────────────────────────────
-  getFeedback: (token) => apiFetch('/feedback', token),
+  getFeedback: () => apiFetch('/feedback'),
 
-  submitFeedback: (token, body) =>
-    apiFetch('/feedback', token, { method: 'POST', body: JSON.stringify(body) }),
+  submitFeedback: (body) =>
+    apiFetch('/feedback', { method: 'POST', body: JSON.stringify(body) }),
 
-  updateFeedbackStatus: (token, id, status) =>
-    apiFetch(`/feedback/${encodeURIComponent(id)}`, token, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  updateFeedbackStatus: (id, status) =>
+    apiFetch(`/feedback/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+
+  // Admin login
+  adminLogin: (password) =>
+    apiFetch('/auth/admin', { method: 'POST', body: JSON.stringify({ password }) }),
 }

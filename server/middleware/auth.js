@@ -1,33 +1,12 @@
-const { createClerkClient } = require('@clerk/backend')
-
-const clerkClient = createClerkClient({
-  secretKey: process.env.CLERK_SECRET_KEY,
-  publishableKey: process.env.CLERK_PUBLISHABLE_KEY
-})
-
-const verifyAuth = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'No token provided' })
-    }
-
-    const token = authHeader.split(' ')[1]
-
-    const { verifyToken } = require('@clerk/backend')
-    
-    const payload = await verifyToken(token, {
-      secretKey: process.env.CLERK_SECRET_KEY,
-    })
-
-    req.userId = payload.sub
-    next()
-
-  } catch (error) {
-    console.log('Token error:', error.message)
-    return res.status(401).json({ error: 'Invalid token' })
-  }
+/**
+ * Simple auth middleware — no Clerk, no JWT.
+ * Students pass x-user-id (a UUID from localStorage) and x-block (MH|LH).
+ * No verification: open access for students, just identity tracking.
+ */
+const simpleAuth = (req, res, next) => {
+  req.userId = req.headers['x-user-id'] || 'anonymous'
+  req.block  = req.headers['x-block']   || 'MH'
+  next()
 }
 
-module.exports = verifyAuth
+module.exports = simpleAuth
