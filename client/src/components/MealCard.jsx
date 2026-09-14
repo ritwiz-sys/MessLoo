@@ -182,8 +182,8 @@ function AiChat({ cfg, dishes }) {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && send()}
           placeholder="Ask about this meal…"
-          className="flex-1 text-sm bg-transparent outline-none"
-          style={{ color: 'var(--text-primary)' }}
+          className="flex-1 bg-transparent outline-none"
+          style={{ color: 'var(--text-primary)', fontSize: 16 }}
         />
         <button
           onClick={() => send()}
@@ -252,8 +252,8 @@ function DetailsTab({ cfg, dishes, onConfirm, onSkip, submitting }) {
         onChange={(e) => setComment(e.target.value)}
         placeholder="Any comments? (optional)"
         rows={2}
-        className="w-full resize-none rounded-2xl px-4 py-3 text-sm outline-none mb-4"
-        style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
+        className="w-full resize-none rounded-2xl px-4 py-3 outline-none mb-4"
+        style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)', fontSize: 16 }}
       />
 
       {/* Confirm */}

@@ -164,6 +164,7 @@ html::before {
 body, #root {
   min-height: 100%;
   background: transparent;
+  overflow-x: hidden;
 }
 body {
   margin: 0;
@@ -171,8 +172,17 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--text-primary);
+  /* Prevent text size inflation on iOS landscape */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
 }
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  /* Remove default tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
+}
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.2); border-radius: 6px; }
@@ -180,6 +190,24 @@ body {
 
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ── Touch-friendly inputs & buttons ── */
+input, textarea, button, select {
+  touch-action: manipulation;  /* Prevents 300ms delay on double-tap */
+}
+
+/* ── Prevent iOS zoom on input focus (font-size must be ≥ 16px) ── */
+input[type="text"],
+input[type="email"],
+input[type="search"],
+textarea {
+  font-size: 16px;
+}
+
+/* ── Safe area bottom padding utility ── */
+.safe-bottom {
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
 
 /* ── NOW pulse for active meal ── */
 @keyframes pulse {

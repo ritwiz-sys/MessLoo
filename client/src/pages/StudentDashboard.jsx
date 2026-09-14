@@ -567,8 +567,8 @@ function DashboardAiChat({ onClose }) {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && send()}
               placeholder="Ask about today's menu…"
-              className="flex-1 text-sm bg-transparent outline-none"
-              style={{ color: 'var(--text-primary)' }}
+              className="flex-1 bg-transparent outline-none"
+              style={{ color: 'var(--text-primary)', fontSize: 16 }}
             />
             <button
               onClick={() => send()}
@@ -729,7 +729,7 @@ export default function StudentDashboard() {
   }, [selectedDate])
 
   return (
-    <div className="min-h-screen" style={{ background: 'transparent' }}>
+    <div className="min-h-screen" style={{ background: 'transparent', overflowX: 'hidden' }}>
 
       {pendingFeedback && (
         <FeedbackModal
@@ -840,17 +840,8 @@ export default function StudentDashboard() {
             </p>
           </div>
 
-          {/* Bell + avatar */}
-          <div className="flex items-center gap-2">
-            <button
-              className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-90"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
-            >
-              <svg width="17" height="19" viewBox="0 0 17 20" fill="none">
-                <path d="M8.5 1C8.5 1 3 4 3 10.5V15.5L1 17.5v1h15v-1l-2-2V10.5C14 4 8.5 1 8.5 1z" fill="rgba(255,255,255,0.52)" />
-                <path d="M6.5 18.5a2 2 0 004 0" stroke="rgba(255,255,255,0.52)" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-            </button>
+          {/* Avatar */}
+          <div className="flex items-center">
             <button
               onClick={() => setShowMenu(!showMenu)}
               className="w-10 h-10 rounded-full flex items-center justify-center font-black transition-all active:scale-90"
@@ -878,19 +869,19 @@ export default function StudentDashboard() {
 
       {/* ── Date navigation ── */}
       <div className="px-5 pt-4 pb-2 max-w-lg mx-auto w-full">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: 'rgba(255,184,48,0.65)' }}>
               {isToday ? '● Today' : '▷ Viewing'}
             </p>
             <h2
-              className="font-black leading-tight mt-0.5"
-              style={{ fontSize: 21, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}
+              className="font-black leading-tight mt-0.5 truncate"
+              style={{ fontSize: 20, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}
             >
               {formattedSelectedDate}
             </h2>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             <button
               onClick={() => setShowCalendar(!showCalendar)}
               className="w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90"
@@ -1002,7 +993,7 @@ export default function StudentDashboard() {
 
       {/* ── Meal cards (2×2 grid) ── */}
       <main className="px-5 pb-28 max-w-lg mx-auto w-full">
-        <div className="grid grid-cols-2 gap-3 mt-1">
+        <div className="flex flex-col gap-3 mt-1">
           {profileLoading || loading
             ? MEAL_ORDER.map((m) => <SkeletonCard key={m} />)
             : MEAL_ORDER.map((mt) => {
@@ -1026,7 +1017,7 @@ export default function StudentDashboard() {
           <button
             type="button"
             onClick={() => setShowAiChat(true)}
-            className="col-span-2 w-full text-left transition-all active:scale-[0.98] relative overflow-hidden"
+            className="w-full text-left transition-all active:scale-[0.98] relative overflow-hidden"
             style={{
               background: 'linear-gradient(135deg, #6D28D9 0%, #4F46E5 60%, #7C3AED 100%)',
               borderRadius: 20,
