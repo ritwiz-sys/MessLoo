@@ -19,7 +19,7 @@ const SEVERITY_CONFIG = {
 }
 
 // ── Feedback section ──────────────────────────────────────────────────────────
-function FeedbackSection({ getToken }) {
+function FeedbackSection() {
   const [items, setItems]         = useState([])
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState(null)
@@ -30,23 +30,21 @@ function FeedbackSection({ getToken }) {
     setLoading(true)
     setError(null)
     try {
-      const token = await getToken()
-      const res = await api.getFeedback(token)
+      const res = await api.getFeedback()
       setItems(res?.data || [])
     } catch (err) {
       setError(err.message || 'Failed to load feedback')
     } finally {
       setLoading(false)
     }
-  }, [getToken])
+  }, [])
 
   useEffect(() => { load() }, [load])
 
   const handleStatusUpdate = async (id, newStatus) => {
     setUpdating(id)
     try {
-      const token = await getToken()
-      const res = await api.updateFeedbackStatus(token, id, newStatus)
+      const res = await api.updateFeedbackStatus(id, newStatus)
       setItems((prev) => prev.map((f) => f.id === id ? (res?.data || { ...f, status: newStatus }) : f))
     } catch { /* ignore */ } finally {
       setUpdating(null)
@@ -248,9 +246,8 @@ export default function AdminDashboard() {
     setSummaryLoading(true)
     setSummaryError(null)
     try {
-      const token = await getToken()
       const today = todayISO()
-      const menusRes = await api.getMenus(token, { date: today, block_category: summaryCategory })
+      const menusRes = await api.getMenus({ date: today, block_category: summaryCategory })
       const menus = menusRes?.data || []
 
       const rows = await Promise.all(
@@ -260,7 +257,7 @@ export default function AdminDashboard() {
             return { mealType, menu: null, summary: null }
           }
           try {
-            const summaryRes = await api.getAttendanceSummary(token, menu.id)
+            const summaryRes = await api.getAttendanceSummary(menu.id)
             return { mealType, menu, summary: summaryRes?.data || null }
           } catch (err) {
             return { mealType, menu, summary: null, error: err.message }
@@ -274,7 +271,7 @@ export default function AdminDashboard() {
     } finally {
       setSummaryLoading(false)
     }
-  }, [getToken, summaryCategory])
+  }, [summaryCategory])
 
   useEffect(() => {
     loadSummary()
@@ -286,8 +283,7 @@ export default function AdminDashboard() {
     setFormMessage(null)
     setFormError(null)
     try {
-      const token = await getToken()
-      await api.addMenu(token, {
+      await api.addMenu({
         block_category: form.block_category,
         date: form.date,
         meal_type: form.meal_type,
@@ -312,8 +308,7 @@ export default function AdminDashboard() {
     setAddingBlock(true)
     setBlocksError(null)
     try {
-      const token = await getToken()
-      await api.addBlock(token, {
+      await api.addBlock({
         block_name: newBlock.block_name,
         block_category: newBlock.block_category,
         catering_company: newBlock.catering_company || null,
@@ -345,8 +340,7 @@ export default function AdminDashboard() {
     setSavingEdit(true)
     setBlocksError(null)
     try {
-      const token = await getToken()
-      await api.updateBlock(token, id, {
+      await api.updateBlock(id, {
         block_name: editForm.block_name,
         block_category: editForm.block_category,
         catering_company: editForm.catering_company || null,
@@ -364,8 +358,7 @@ export default function AdminDashboard() {
     setDeletingId(id)
     setBlocksError(null)
     try {
-      const token = await getToken()
-      await api.deleteBlock(token, id)
+      await api.deleteBlock(id)
       await loadBlocks()
     } catch (err) {
       setBlocksError(err.message || 'Failed to delete block')
@@ -432,7 +425,7 @@ export default function AdminDashboard() {
 
         <WastagePredictionSection />
 
-        <FeedbackSection getToken={getToken} />
+        <FeedbackSection />
 
         <section>
           <h1 className="text-xl font-semibold text-gray-100 mb-1">Manage Blocks</h1>
