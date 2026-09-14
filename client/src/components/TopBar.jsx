@@ -1,6 +1,14 @@
-import { UserButton } from '../lib/clerk'
+import { useNavigate } from 'react-router-dom'
+import { clearSession } from '../lib/auth'
 
-export default function TopBar({ title, subtitle }) {
+export default function TopBar({ title, subtitle, showLogout = false }) {
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    clearSession()
+    navigate('/login', { replace: true })
+  }
+
   return (
     <div className="flex items-center justify-between border-b border-white/10 px-4 sm:px-8 py-4">
       <div className="flex items-center gap-3">
@@ -12,15 +20,20 @@ export default function TopBar({ title, subtitle }) {
           {subtitle && <p className="text-xs text-gray-500 leading-tight">{subtitle}</p>}
         </div>
       </div>
-      <UserButton
-        appearance={{
-          elements: {
-            userButtonPopoverCard: 'bg-[#15151c] border border-white/10',
-            userButtonPopoverText: 'text-gray-200',
-            userButtonPopoverActionButtonText: 'text-gray-200',
-          },
-        }}
-      />
+
+      {showLogout && (
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+          style={{
+            background: 'rgba(226,55,68,0.12)',
+            color: '#E23744',
+            border: '1px solid rgba(226,55,68,0.25)',
+          }}
+        >
+          🚪 Log out
+        </button>
+      )}
     </div>
   )
 }

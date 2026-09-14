@@ -418,7 +418,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#0b0b10]">
-      <TopBar title={profile?.name || 'Admin'} subtitle="MessLoo · Admin Dashboard" />
+      <TopBar title={profile?.name || 'Admin'} subtitle="MessLoo · Admin Dashboard" showLogout />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-8 py-8 flex flex-col gap-10">
         <PredictionsSection />
