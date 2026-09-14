@@ -743,65 +743,6 @@ export default function StudentDashboard() {
         <DashboardAiChat onClose={() => setShowAiChat(false)} />
       )}
 
-      {/* ── Hamburger menu overlay ── */}
-      {showMenu && (
-        <div
-          className="fixed inset-0 z-40"
-          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
-          onClick={() => setShowMenu(false)}
-        >
-          <div
-            className="absolute max-w-lg left-0 right-0 mx-auto"
-            style={{ top: 'max(84px, calc(env(safe-area-inset-top, 0px) + 70px))', padding: '0 20px' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              className="rounded-2xl overflow-hidden"
-              style={{
-                background: 'rgba(14,14,20,0.98)',
-                backdropFilter: 'blur(28px)',
-                WebkitBackdropFilter: 'blur(28px)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
-              }}
-            >
-              {blockName && (
-                <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0"
-                    style={{ background: 'rgba(255,184,48,0.12)', color: '#FFB830', border: '1px solid rgba(255,184,48,0.2)' }}
-                  >
-                    {blockName[0]}
-                  </div>
-                  <div>
-                    <p className="font-black text-[14px]" style={{ color: 'rgba(255,255,255,0.92)' }}>Block {blockName}</p>
-                    <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.38)' }}>VIT-AP Hostel Mess</p>
-                  </div>
-                </div>
-              )}
-              <button
-                onClick={() => { toggleTheme(); setShowMenu(false) }}
-                className="w-full flex items-center gap-4 px-5 py-4 transition-colors"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'transparent' }}
-              >
-                <span style={{ fontSize: 20, lineHeight: 1 }}>{theme === 'dark' ? '☀️' : '🌙'}</span>
-                <span className="text-[13px] font-semibold" style={{ color: 'rgba(255,255,255,0.78)' }}>
-                  {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-                </span>
-              </button>
-              <button
-                onClick={() => { clearSession(); navigate('/login', { replace: true }) }}
-                className="w-full flex items-center gap-4 px-5 py-4 transition-colors"
-                style={{ background: 'transparent' }}
-              >
-                <span style={{ fontSize: 20, lineHeight: 1 }}>🚪</span>
-                <span className="text-[13px] font-semibold" style={{ color: '#E23744' }}>Sign out</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ── Sticky top bar ── */}
       <div
         className="sticky top-0 z-30 w-full"
@@ -819,19 +760,59 @@ export default function StudentDashboard() {
             paddingBottom: 12,
           }}
         >
-          {/* Menu icon — bento grid */}
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-90"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <rect x="0" y="0" width="7" height="7" rx="2" fill="rgba(255,255,255,0.75)" />
-              <rect x="9" y="0" width="7" height="7" rx="2" fill="#FFB830" />
-              <rect x="0" y="9" width="7" height="7" rx="2" fill="rgba(255,255,255,0.75)" />
-              <rect x="9" y="9" width="7" height="7" rx="2" fill="rgba(255,255,255,0.35)" />
-            </svg>
-          </button>
+          {/* Bento icon — opens settings dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowMenu(v => !v)}
+              className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-90"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="0" y="0" width="7" height="7" rx="2" fill="rgba(255,255,255,0.75)" />
+                <rect x="9" y="0" width="7" height="7" rx="2" fill="#FFB830" />
+                <rect x="0" y="9" width="7" height="7" rx="2" fill="rgba(255,255,255,0.75)" />
+                <rect x="9" y="9" width="7" height="7" rx="2" fill="rgba(255,255,255,0.35)" />
+              </svg>
+            </button>
+
+            {/* Dropdown */}
+            {showMenu && (
+              <>
+                {/* backdrop */}
+                <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                <div
+                  className="absolute left-0 z-50 mt-2 rounded-2xl overflow-hidden"
+                  style={{
+                    minWidth: 180,
+                    background: 'rgba(14,14,20,0.98)',
+                    backdropFilter: 'blur(28px)',
+                    WebkitBackdropFilter: 'blur(28px)',
+                    border: '1px solid rgba(255,255,255,0.10)',
+                    boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+                  }}
+                >
+                  <button
+                    onClick={() => { toggleTheme(); setShowMenu(false) }}
+                    className="w-full flex items-center gap-3 px-4 py-3 transition-colors"
+                    style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'transparent' }}
+                  >
+                    <span style={{ fontSize: 16, lineHeight: 1 }}>{theme === 'dark' ? '☀️' : '🌙'}</span>
+                    <span className="text-[13px] font-semibold" style={{ color: 'rgba(255,255,255,0.78)' }}>
+                      {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => { clearSession(); navigate('/login', { replace: true }) }}
+                    className="w-full flex items-center gap-3 px-4 py-3 transition-colors"
+                    style={{ background: 'transparent' }}
+                  >
+                    <span style={{ fontSize: 16, lineHeight: 1 }}>🚪</span>
+                    <span className="text-[13px] font-semibold" style={{ color: '#E23744' }}>Sign out</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Brand */}
           <div className="text-center select-none">
@@ -843,19 +824,30 @@ export default function StudentDashboard() {
             </p>
           </div>
 
-          {/* Avatar */}
+          {/* Avatar — male for MH blocks, female for LH blocks */}
           <div className="flex items-center">
             <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="w-10 h-10 rounded-full flex items-center justify-center font-black transition-all active:scale-90"
+              onClick={() => { clearSession(); navigate('/login', { replace: true }) }}
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90"
               style={{
                 background: 'linear-gradient(135deg, #FFB830 0%, #E6A000 100%)',
-                color: '#2a1a00',
-                fontSize: 15,
                 boxShadow: '0 3px 12px rgba(255,184,48,0.45)',
               }}
             >
-              {(blockName || firstName || 'M')[0].toUpperCase()}
+              {blockCategory === 'LH' ? (
+                /* Female avatar — head with bun */
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="#2a1a00">
+                  <circle cx="12" cy="3.6" r="2"/>
+                  <circle cx="12" cy="8.5" r="4"/>
+                  <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
+                </svg>
+              ) : (
+                /* Male avatar — plain head + shoulders */
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="#2a1a00">
+                  <circle cx="12" cy="7.5" r="4.5"/>
+                  <path d="M3 21c0-5 4-9 9-9s9 4 9 9"/>
+                </svg>
+              )}
             </button>
           </div>
         </div>

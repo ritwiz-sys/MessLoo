@@ -4,10 +4,13 @@
    LIGHT THEME  (default)
 ══════════════════════════════════════════ */
 :root {
-  --bg-gradient:        linear-gradient(135deg, #FFB5B5 0%, #B5E8C8 40%, #F5E87A 75%, #FFFFFF 100%);
-  --text-primary:       #1C1C1E;
-  --text-secondary:     #555555;
-  --text-muted:         #8B8B8B;
+  --bg-gradient:        linear-gradient(135deg, #FFB5B5 0%, #D4B0F0 18%, #B5E8C8 40%, #A8DEF0 58%, #F5E87A 75%, #FFD0A0 90%, #FFB5B5 100%);
+  --orb1:               rgba(255, 100, 160, 0.22);
+  --orb2:               rgba(100, 210, 160, 0.18);
+  --orb3:               rgba(168, 120, 240, 0.16);
+  --text-primary:       #0C1E40;
+  --text-secondary:     #1E3A6E;
+  --text-muted:         #4A6890;
   --card-bg:            rgba(255,255,255,0.45);
   --card-blur:          blur(16px);
   --card-border:        1px solid rgba(255,255,255,0.6);
@@ -16,7 +19,7 @@
   --seg-border:         1px solid rgba(255,255,255,0.6);
   --seg-active-bg:      #E23744;
   --seg-active-text:    #FFFFFF;
-  --seg-inactive-text:  #666666;
+  --seg-inactive-text:  #2E5080;
   --pill-bg:            rgba(226,55,68,0.10);
   --pill-color:         #E23744;
   --pill-border:        rgba(226,55,68,0.20);
@@ -30,27 +33,30 @@
   --dish-odd:           rgba(255,255,255,0.85);
   --dish-even:          rgba(248,248,248,0.85);
   --dish-border:        rgba(0,0,0,0.06);
-  --dish-text:          #1C1C1E;
+  --dish-text:          #0C1E40;
   --input-bg:           rgba(255,255,255,0.7);
   --input-border:       rgba(0,0,0,0.10);
-  --skip-color:         #999999;
+  --skip-color:         #6A8EB0;
   --error-bg:           rgba(226,55,68,0.08);
   --error-color:        #E23744;
   --error-border:       rgba(226,55,68,0.20);
   --offline-bg:         rgba(247,151,30,0.15);
   --offline-color:      #D97706;
   --offline-border:     rgba(247,151,30,0.30);
-  --greeting-color:     #999999;
+  --greeting-color:     #6A8EB0;
   --handle-color:       #DDDDDD;
   --toggle-bg:          rgba(0,0,0,0.07);
-  --section-title:      #1C1C1E;
+  --section-title:      #0C1E40;
 }
 
 /* ══════════════════════════════════════════
    DARK THEME
 ══════════════════════════════════════════ */
 [data-theme="dark"] {
-  --bg-gradient:        linear-gradient(135deg, #3D0000 0%, #0A0A3A 40%, #1A1A00 70%, #7A4500 100%);
+  --bg-gradient:        linear-gradient(135deg, #3D0000 0%, #1A0030 22%, #0A0A3A 42%, #00200F 62%, #7A4500 82%, #3D0000 100%);
+  --orb1:               rgba(255, 50, 80, 0.14);
+  --orb2:               rgba(40, 40, 160, 0.16);
+  --orb3:               rgba(255, 184, 48, 0.10);
   --text-primary:       #FFFFFF;
   --text-secondary:     rgba(255,255,255,0.65);
   --text-muted:         rgba(255,255,255,0.38);
@@ -97,7 +103,10 @@
 ══════════════════════════════════════════ */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg-gradient:        linear-gradient(135deg, #3D0000 0%, #0A0A3A 40%, #1A1A00 70%, #7A4500 100%);
+    --bg-gradient:        linear-gradient(135deg, #3D0000 0%, #1A0030 22%, #0A0A3A 42%, #00200F 62%, #7A4500 82%, #3D0000 100%);
+    --orb1:               rgba(255, 50, 80, 0.14);
+    --orb2:               rgba(40, 40, 160, 0.16);
+    --orb3:               rgba(255, 184, 48, 0.10);
     --text-primary:       #FFFFFF;
     --text-secondary:     rgba(255,255,255,0.65);
     --text-muted:         rgba(255,255,255,0.38);
@@ -156,10 +165,39 @@ html::before {
   position: fixed;
   inset: 0;
   background: var(--bg-gradient);
+  background-size: 300% 300%;
   z-index: -1;
   pointer-events: none;
-  /* Smooth theme transition */
-  transition: background 0.4s ease;
+  /* Animated gradient shift */
+  animation: bg-shift 20s ease infinite;
+  /* Smooth theme switch */
+  transition: background-color 0.4s ease;
+}
+html::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 45% at 15% 85%, var(--orb1) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 55% at 85% 15%, var(--orb2) 0%, transparent 65%),
+    radial-gradient(ellipse 65% 50% at 60% 55%, var(--orb3) 0%, transparent 65%);
+  animation: orb-drift 24s ease-in-out infinite alternate;
+}
+
+@keyframes bg-shift {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+
+@keyframes orb-drift {
+  0%   { transform: translate(0px,   0px)  scale(1.00); }
+  25%  { transform: translate(28px, -18px) scale(1.04); }
+  50%  { transform: translate(-18px, 22px) scale(0.97); }
+  75%  { transform: translate(12px,  30px) scale(1.03); }
+  100% { transform: translate(-24px, -12px) scale(0.99); }
 }
 body, #root {
   min-height: 100%;
