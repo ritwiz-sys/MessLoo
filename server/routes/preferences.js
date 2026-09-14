@@ -2,20 +2,12 @@ const express = require('express')
 const router = express.Router()
 const verifyAuth = require('../middleware/auth')
 const supabase = require('../supabase')
-
-async function getSupabaseUserId(clerkUserId) {
-  const { data, error } = await supabase
-    .from('users')
-    .select('id')
-    .eq('clerk_user_id', clerkUserId)
-    .single()
-  if (error || !data) return null
-  return data.id
-}
+const getOrCreateUser = require('../helpers/getOrCreateUser')
 
 // GET /preferences — get current user's preferences
 router.get('/', verifyAuth, async (req, res) => {
-  const userId = await getSupabaseUserId(req.userId)
+  const user = await getOrCreateUser(req.userId, req.block)
+  const userId = user?.id
   if (!userId) return res.status(404).json({ error: 'User not found' })
 
   const { data, error } = await supabase
@@ -34,7 +26,8 @@ router.get('/', verifyAuth, async (req, res) => {
 
 // POST /preferences — create or update preferences (full upsert)
 router.post('/', verifyAuth, async (req, res) => {
-  const userId = await getSupabaseUserId(req.userId)
+  const user = await getOrCreateUser(req.userId, req.block)
+  const userId = user?.id
   if (!userId) return res.status(404).json({ error: 'User not found' })
 
   const {
@@ -70,7 +63,8 @@ router.patch('/like', verifyAuth, async (req, res) => {
     return res.status(400).json({ error: 'dish is required' })
   }
 
-  const userId = await getSupabaseUserId(req.userId)
+  const user = await getOrCreateUser(req.userId, req.block)
+  const userId = user?.id
   if (!userId) return res.status(404).json({ error: 'User not found' })
 
   const { data: current } = await supabase
@@ -108,7 +102,8 @@ router.patch('/dislike', verifyAuth, async (req, res) => {
     return res.status(400).json({ error: 'dish is required' })
   }
 
-  const userId = await getSupabaseUserId(req.userId)
+  const user = await getOrCreateUser(req.userId, req.block)
+  const userId = user?.id
   if (!userId) return res.status(404).json({ error: 'User not found' })
 
   const { data: current } = await supabase

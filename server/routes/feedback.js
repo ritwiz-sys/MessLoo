@@ -2,22 +2,13 @@ const express = require('express')
 const router = express.Router()
 const verifyAuth = require('../middleware/auth')
 const supabase = require('../supabase')
+const getOrCreateUser = require('../helpers/getOrCreateUser')
 
 const ADMIN_ROLES = ['super_admin', 'company_admin']
 
-async function getFullUser(clerkUserId) {
-  const { data, error } = await supabase
-    .from('users')
-    .select('id, role, block_id')
-    .eq('clerk_user_id', clerkUserId)
-    .single()
-  if (error || !data) return null
-  return data
-}
-
-// POST /feedback — student/faculty submits feedback
+// POST /feedback — student submits feedback
 router.post('/', verifyAuth, async (req, res) => {
-  const user = await getFullUser(req.userId)
+  const user = await getOrCreateUser(req.userId, req.block)
   if (!user) return res.status(404).json({ error: 'User not found' })
 
   if (user.role === 'kitchen_staff') {
@@ -52,61 +43,42 @@ router.post('/', verifyAuth, async (req, res) => {
 
 // GET /feedback — role-based fetch
 router.get('/', verifyAuth, async (req, res) => {
-  const user = await getFullUser(req.userId)
+  const user = await getOrCreateUser(req.userId, req.block)
   if (!user) return res.status(404).json({ error: 'User not found' })
 
   if (user.role === 'kitchen_staff') {
     return res.status(403).json({ error: 'Not authorized' })
   }
 
-  if (user.role === 'student' || user.role === 'faculty') {
-    const { data, error } = await supabase
-      .from('feedback')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-
-    if (error) return res.status(500).json({ error: error.message })
-    return res.json({ data })
-  }
-
-  if (user.role === 'company_admin') {
-    const { data, error } = await supabase
-      .from('feedback')
-      .select('*')
-      .eq('block_id', user.block_id)
-      .order('created_at', { ascending: false })
-
-    if (error) return res.status(500).json({ error: error.message })
-    return res.json({ data })
-  }
-
-  if (user.role === 'super_admin') {
+  // Admin (our simple auth role) sees all feedback
+  if (user.role === 'admin' || user.role === 'super_admin') {
     const { status, block_id, severity } = req.query
-
-    let query = supabase
-      .from('feedback')
-      .select('*')
-      .order('created_at', { ascending: false })
-
+    let query = supabase.from('feedback').select('*').order('created_at', { ascending: false })
     if (status) query = query.eq('status', status)
     if (block_id) query = query.eq('block_id', block_id)
     if (severity) query = query.eq('severity', severity)
-
     const { data, error } = await query
     if (error) return res.status(500).json({ error: error.message })
     return res.json({ data })
   }
 
-  return res.status(403).json({ error: 'Not authorized' })
+  // Students see only their own feedback
+  const { data, error } = await supabase
+    .from('feedback')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  if (error) return res.status(500).json({ error: error.message })
+  return res.json({ data })
 })
 
 // PATCH /feedback/:id — admin updates feedback status
 router.patch('/:id', verifyAuth, async (req, res) => {
-  const user = await getFullUser(req.userId)
+  const user = await getOrCreateUser(req.userId, req.block)
   if (!user) return res.status(404).json({ error: 'User not found' })
 
-  if (!ADMIN_ROLES.includes(user.role)) {
+  if (!ADMIN_ROLES.includes(user.role) && user.role !== 'admin') {
     return res.status(403).json({ error: 'Not authorized' })
   }
 
