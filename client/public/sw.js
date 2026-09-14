@@ -516,33 +516,36 @@ self.addEventListener('fetch', (e) => {
           isStale = !cachedAt || (Date.now() - Number(cachedAt) > API_TTL_MS)
         }
 
-        if (cached && !isStale) {
-          // Fresh — return immediately, no background fetch
-          return cached
+        if (cached && !isStale) return cached
+
+        // Read the body ONCE as text, then create two separate Response objects —
+        // one for the cache (with timestamp header) and one for the caller.
+        // This avoids ReadableStream tee / "body already used" errors entirely.
+        const revalidate = async () => {
+          try {
+            const res = await fetch(request.clone())
+            if (!res.ok) return res
+            const text = await res.text()
+            const cachedHeaders = new Headers(res.headers)
+            cachedHeaders.set('x-sw-cached-at', String(Date.now()))
+            await cache.put(
+              request,
+              new Response(text, { status: res.status, statusText: res.statusText, headers: cachedHeaders })
+            )
+            // Return a fresh copy for the page (original headers, no timestamp)
+            return new Response(text, { status: res.status, statusText: res.statusText, headers: res.headers })
+          } catch { return null }
         }
 
-        // Stale or missing — fetch from network
-        const fetchPromise = fetch(request).then((res) => {
-          if (res.ok) {
-            // Clone and inject a timestamp header before caching
-            const headers = new Headers(res.headers)
-            headers.set('x-sw-cached-at', String(Date.now()))
-            const stamped = new Response(res.clone().body, { status: res.status, headers })
-            cache.put(request, stamped)
-          }
-          return res
-        }).catch(() => null)
-
-        // If we have a stale cached response, serve it immediately and revalidate in background
+        // Stale cached response → serve immediately, revalidate silently in background
         if (cached) {
-          e.waitUntil(fetchPromise)
+          e.waitUntil(revalidate())
           return cached
         }
 
-        // No cache at all — wait for network
-        const res = await fetchPromise
-        if (res) return res
-        return new Response(JSON.stringify({ error: 'Offline' }), {
+        // No cache at all → wait for network
+        const res = await revalidate()
+        return res ?? new Response(JSON.stringify({ error: 'Offline' }), {
           status: 503,
           headers: { 'Content-Type': 'application/json' },
         })
