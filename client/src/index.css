@@ -153,55 +153,20 @@
 ══════════════════════════════════════════ */
 
 /*
-  Use a position:fixed pseudo-element for the gradient background.
-  background-attachment:fixed is broken on iOS Safari / Chrome Android —
-  the pseudo-element approach works everywhere.
+  Background is now handled by the WebGL Grainient component in AppBackground.jsx.
+  These rules keep the page transparent so the canvas shows through.
 */
 html {
   min-height: 100%;
+  background: transparent;
 }
-html::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: var(--bg-gradient);
-  background-size: 300% 300%;
-  z-index: -1;
-  pointer-events: none;
-  /* Animated gradient shift */
-  animation: bg-shift 20s ease infinite;
-  /* Smooth theme switch */
-  transition: background-color 0.4s ease;
-}
+html::before,
 html::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 55% 45% at 15% 85%, var(--orb1) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 55% at 85% 15%, var(--orb2) 0%, transparent 65%),
-    radial-gradient(ellipse 65% 50% at 60% 55%, var(--orb3) 0%, transparent 65%);
-  animation: orb-drift 24s ease-in-out infinite alternate;
-}
-
-@keyframes bg-shift {
-  0%   { background-position: 0%   50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0%   50%; }
-}
-
-@keyframes orb-drift {
-  0%   { transform: translate(0px,   0px)  scale(1.00); }
-  25%  { transform: translate(28px, -18px) scale(1.04); }
-  50%  { transform: translate(-18px, 22px) scale(0.97); }
-  75%  { transform: translate(12px,  30px) scale(1.03); }
-  100% { transform: translate(-24px, -12px) scale(0.99); }
+  display: none;
 }
 body, #root {
   min-height: 100%;
-  background: transparent;
+  background: transparent !important;
   overflow-x: hidden;
 }
 body {

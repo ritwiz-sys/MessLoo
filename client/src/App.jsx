@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { getSession, isAdmin } from './lib/auth'
 import { UserProvider } from './context/UserContext'
+import AppBackground from './components/AppBackground'
+import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import StudentDashboard from './pages/StudentDashboard'
 import ChatPage from './pages/ChatPage'
@@ -10,18 +12,18 @@ import InvitePage from './pages/InvitePage'
 
 function RequireAuth({ children }) {
   const session = getSession()
-  if (!session) return <Navigate to="/login" replace />
+  if (!session) return <Navigate to="/" replace />
   return children
 }
 
 function RequireAdmin({ children }) {
-  if (!isAdmin()) return <Navigate to="/login" replace />
+  if (!isAdmin()) return <Navigate to="/" replace />
   return children
 }
 
 function Home() {
   const session = getSession()
-  if (!session) return <Navigate to="/login" replace />
+  if (!session) return <LandingPage />
   if (session.role === 'admin') return <Navigate to="/admin" replace />
   return <Navigate to="/dashboard" replace />
 }
@@ -29,20 +31,25 @@ function Home() {
 function App() {
   return (
     <UserProvider>
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/invite" element={<InvitePage />} />
+      {/* WebGL animated grain background — sits behind all pages */}
+      <AppBackground />
+      <Routes>
+        {/* Landing / smart home */}
+        <Route path="/"       element={<Home />} />
+        <Route path="/login"  element={<LoginPage />} />
+        <Route path="/invite" element={<InvitePage />} />
 
-      {/* Student routes */}
-      <Route path="/dashboard" element={<RequireAuth><StudentDashboard /></RequireAuth>} />
-      <Route path="/chat"      element={<RequireAuth><ChatPage /></RequireAuth>} />
-      <Route path="/profile"   element={<RequireAuth><ProfilePage /></RequireAuth>} />
+        {/* Student routes */}
+        <Route path="/dashboard" element={<RequireAuth><StudentDashboard /></RequireAuth>} />
+        <Route path="/chat"      element={<RequireAuth><ChatPage /></RequireAuth>} />
+        <Route path="/profile"   element={<RequireAuth><ProfilePage /></RequireAuth>} />
 
-      {/* Admin */}
-      <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
+        {/* Admin */}
+        <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
 
-      <Route path="*" element={<Home />} />
-    </Routes>
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </UserProvider>
   )
 }

@@ -1,0 +1,120 @@
+/* ── FlipCard ── */
+
+.flip-card {
+  position: relative;
+  display: block;          /* full-width by default inside its container */
+  width: min(var(--fc-w, 340px), 100%);
+  height: var(--fc-h, 210px);
+  border-radius: var(--fc-radius, 20px);
+  outline: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: pan-y;
+  cursor: pointer;
+}
+
+.flip-card[data-draggable] { cursor: grab; }
+.flip-card[data-dragging]  { cursor: grabbing; }
+.flip-card[data-disabled]  { cursor: default; pointer-events: none; opacity: 0.5; }
+
+/* focus ring */
+.flip-card:focus-visible {
+  outline: 2px solid rgba(255,255,255,0.6);
+  outline-offset: 3px;
+}
+
+/* ── Shadow ── */
+.flip-card__shadow {
+  position: absolute;
+  inset: 10% 5%;
+  border-radius: inherit;
+  background: color-mix(
+    in srgb,
+    var(--fc-shadow, #000) calc(var(--fc-shadow-o, 0.4) * 100%),
+    transparent
+  );
+  filter: blur(22px);
+  z-index: 0;
+  pointer-events: none;
+  transform-origin: center bottom;
+}
+
+/* ── 3D rotor ── */
+.flip-card__rotor {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transform-style: preserve-3d;
+  will-change: transform;
+  z-index: 1;
+}
+
+/* reduced-motion: just swap opacity */
+.flip-card[data-fade] .flip-card__rotor { transform: none !important; }
+.flip-card[data-fade="front"] .flip-card__face--front { opacity: 1; }
+.flip-card[data-fade="front"] .flip-card__face--back  { opacity: 0; }
+.flip-card[data-fade="back"]  .flip-card__face--front { opacity: 0; }
+.flip-card[data-fade="back"]  .flip-card__face--back  { opacity: 1; }
+
+/* ── Faces ── */
+.flip-card__face {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  background: var(--fc-bg, #1a1a2e);
+  color: var(--fc-ink, #f5f5f5);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-card__face--front {
+  transform: rotateY(0deg);
+  z-index: 2;
+}
+
+.flip-card__face--back {
+  transform: rotateY(180deg);
+  z-index: 1;
+}
+
+/* X-axis variant */
+.flip-card[data-axis="x"] .flip-card__face--back {
+  transform: rotateX(180deg);
+}
+
+/* ── Glare ── */
+.flip-card__glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at var(--fc-gx, 50%) var(--fc-gy, 50%),
+    rgba(255,255,255,var(--fc-glare, 0.22)),
+    transparent 62%
+  );
+  /* --fc-sheen is a motion value (0→1) from the spring */
+  opacity: var(--fc-sheen, 0);
+  z-index: 10;
+  mix-blend-mode: overlay;
+}
+
+.flip-card__glare--back {
+  /* back face glare: counter-rotate so it faces correctly */
+  transform: rotateY(180deg);
+}
+
+/* ── Touch-safe: remove outline flash on mobile ── */
+@media (hover: none) {
+  .flip-card:focus-visible {
+    outline: none;
+  }
+}
+
+/* ── Widen tap area slightly on very small screens ── */
+@media (max-width: 380px) {
+  .flip-card {
+    border-radius: 16px;
+  }
+}

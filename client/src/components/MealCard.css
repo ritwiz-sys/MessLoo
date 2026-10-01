@@ -1,0 +1,113 @@
+/* ── MealCard — photo + hover effects ────────────────────────────────────── */
+
+/* Outer wrapper — hover glow */
+.meal-card-outer {
+  width: 100%;
+  border-radius: 20px;
+  transition:
+    filter 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: filter, transform;
+}
+
+.meal-card-outer:hover {
+  filter: drop-shadow(0 14px 32px var(--meal-glow, rgba(0,0,0,0.35)));
+  transform: translateY(-2px);
+}
+
+.meal-card-outer:active {
+  transform: scale(0.985) translateY(0);
+}
+
+/* Photo — zoom on hover */
+.meal-front-img {
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.flip-card:hover .meal-front-img {
+  transform: scale(1.07);
+}
+
+/* Flip hint arrow — slides right on hover */
+.meal-flip-hint {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.55);
+  transition: color 0.25s, gap 0.25s;
+}
+
+.flip-card:hover .meal-flip-hint {
+  color: rgba(255,255,255,0.90);
+  gap: 6px;
+}
+
+.meal-flip-arrow {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.flip-card:hover .meal-flip-arrow {
+  transform: translateX(4px);
+}
+
+/* Back face — glass morphism */
+.meal-back-face {
+  background: var(--card-bg);
+  backdrop-filter: var(--card-blur);
+  -webkit-backdrop-filter: var(--card-blur);
+  border: var(--card-border);
+}
+
+/* CTA button hover lift */
+.meal-cta-btn {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s;
+}
+
+.meal-cta-btn:not(:disabled):hover {
+  transform: translateY(-1px) scale(1.01);
+}
+
+.meal-cta-btn:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+/* Dish row hover */
+.meal-dish-row {
+  transition: background 0.15s;
+}
+
+.meal-dish-row:hover {
+  filter: brightness(1.06);
+}
+
+/* "NOW" pulse beacon */
+@keyframes now-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255,255,255,0.4); }
+  50%       { opacity: 0.55; box-shadow: 0 0 0 4px rgba(255,255,255,0); }
+}
+
+.meal-now-dot {
+  animation: now-pulse 1.4s ease-in-out infinite;
+}
+
+/* Tap hint bounce — fires once on mount */
+@keyframes tap-bounce {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.018); }
+  70%  { transform: scale(0.994); }
+  100% { transform: scale(1); }
+}
+
+.meal-card-outer.has-menu {
+  animation: tap-bounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.8s both;
+}
+
+/* Special shimmer — keep from index.css but scoped */
+.meal-card-special {
+  animation: gold-shimmer 1.8s ease-in-out infinite;
+}
