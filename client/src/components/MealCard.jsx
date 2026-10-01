@@ -282,6 +282,7 @@ function CardBack({ cfg, dishes, marked, hasMenu, onMarkClick }) {
         <div style={{ padding: '5px 11px 11px', flexShrink: 0 }}>
           <button
             className="meal-cta-btn"
+            onTouchEnd={(e) => { e.stopPropagation(); }}
             onClick={(e) => { e.stopPropagation(); onMarkClick() }}
             disabled={marked}
             style={{
@@ -534,6 +535,9 @@ export default function MealCard({ mealType, menuItem, attendance, onMarkAttenda
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
+  // ── Controlled flip state — we own this so touch events are handled reliably ──
+  const [isFlipped, setIsFlipped] = useState(false)
+
   // Measure container width so FlipCard fills it exactly
   const wrapRef = useRef(null)
   const [cardWidth, setCardWidth] = useState(360)
@@ -544,7 +548,6 @@ export default function MealCard({ mealType, menuItem, attendance, onMarkAttenda
       setCardWidth(Math.floor(entry.contentRect.width))
     })
     ro.observe(el)
-    // Immediate read
     setCardWidth(Math.floor(el.getBoundingClientRect().width))
     return () => ro.disconnect()
   }, [])
@@ -554,6 +557,35 @@ export default function MealCard({ mealType, menuItem, attendance, onMarkAttenda
   const isSpecial = menuItem?.is_special
   const marked = Boolean(attendance)
   const dishes = parseDishes(menuItem?.items)
+
+  // ── Touch-safe flip toggle ─────────────────────────────────────────────────
+  // Track touch start position so we only flip on a genuine tap (< 8px movement)
+  const touchStart = useRef(null)
+
+  const handleTouchStart = (e) => {
+    if (!hasMenu) return
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+  }
+
+  const handleTouchEnd = (e) => {
+    if (!hasMenu || !touchStart.current) return
+    const dx = Math.abs(e.changedTouches[0].clientX - touchStart.current.x)
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStart.current.y)
+    touchStart.current = null
+    // Only flip if finger barely moved (tap, not scroll)
+    if (dx < 10 && dy < 10) {
+      e.preventDefault()
+      setIsFlipped(f => !f)
+    }
+  }
+
+  // Desktop click fallback (fires after touch events on mobile but we've already handled it)
+  const handleClick = (e) => {
+    // On touch devices touchEnd handles it; on mouse devices we use click
+    if (e.pointerType === 'touch') return
+    if (!hasMenu) return
+    setIsFlipped(f => !f)
+  }
 
   const doConfirm = async (stars, comment) => {
     setSubmitting(true); setError(null)
@@ -594,28 +626,35 @@ export default function MealCard({ mealType, menuItem, attendance, onMarkAttenda
         />
       )}
 
-      {/* Outer glow wrapper — CSS hover handled via .meal-card-outer */}
+      {/* Outer wrapper — owns touch + click for flip */}
       <div
         ref={wrapRef}
         className={`meal-card-outer ${hasMenu ? 'has-menu' : ''} ${isSpecial ? 'meal-card-special' : ''}`}
-        style={{ '--meal-glow': cfg.glowColor }}
+        style={{ '--meal-glow': cfg.glowColor, cursor: hasMenu ? 'pointer' : 'default' }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onClick={handleClick}
       >
         <FlipCard
-          width={cardWidth}
-          height={230}
-          radius={20}
-          axis="y"
-          flipOnClick={hasMenu}
-          draggable={hasMenu}
+          /* Controlled — we drive the flip state ourselves */
+          flipped={isFlipped}
+          /* Disable FlipCard's own click/drag/pointer-capture logic */
+          flipOnClick={false}
+          draggable={false}
+          /* Still allow tilt+glare on desktop hover */
           tilt={true}
           tiltMax={8}
           glare={true}
           glareOpacity={0.16}
-          hoverScale={1.0}        /* outer wrapper handles scale */
+          hoverScale={1.0}
+          width={cardWidth}
+          height={230}
+          radius={20}
+          axis="y"
           perspective={900}
           stiffness={190}
           damping={22}
-          shadow={false}          /* outer wrapper handles shadow */
+          shadow={false}
           background="transparent"
           color="#fff"
           ariaLabel={`${cfg.label} — tap to flip and see menu`}
