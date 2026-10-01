@@ -2,7 +2,6 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { getSession, isAdmin } from './lib/auth'
 import { UserProvider } from './context/UserContext'
 import AppBackground from './components/AppBackground'
-import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import StudentDashboard from './pages/StudentDashboard'
 import ChatPage from './pages/ChatPage'
@@ -23,7 +22,7 @@ function RequireAdmin({ children }) {
 
 function Home() {
   const session = getSession()
-  if (!session) return <LandingPage />
+  if (!session) return <Navigate to="/login" replace />
   if (session.role === 'admin') return <Navigate to="/admin" replace />
   return <Navigate to="/dashboard" replace />
 }

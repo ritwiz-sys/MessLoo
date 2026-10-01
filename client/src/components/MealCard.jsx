@@ -199,7 +199,72 @@ function CardFront({ cfg, isSpecial, isActive, marked, hasMenu }) {
 }
 
 // ── BACK face ─────────────────────────────────────────────────────────────────
-function CardBack({ cfg, dishes, marked, hasMenu }) {
+function CardBack({ cfg, dishes, marked, hasMenu, isVisible }) {
+  const scrollRef = useRef(null)
+  const rafRef    = useRef(null)
+  const pausedRef = useRef(false)
+  const resumeTimer = useRef(null)
+
+  useEffect(() => {
+    const el = scrollRef.current
+    cancelAnimationFrame(rafRef.current)
+    clearTimeout(resumeTimer.current)
+
+    if (!isVisible) {
+      // Reset scroll when card is flipped back to front
+      if (el) el.scrollTop = 0
+      pausedRef.current = false
+      return
+    }
+
+    // Wait for the spring flip animation to fully settle before scrolling
+    const startDelay = setTimeout(() => {
+      if (!el) return
+      el.scrollTop = 0
+      pausedRef.current = false
+
+      const SPEED = 24  // pixels per second
+
+      let last = null
+      const tick = (ts) => {
+        if (!pausedRef.current) {
+          if (last !== null) {
+            el.scrollTop += SPEED * (ts - last) / 1000
+            // Reached the bottom — pause, then loop back to top
+            if (el.scrollTop >= el.scrollHeight - el.clientHeight - 2) {
+              pausedRef.current = true
+              resumeTimer.current = setTimeout(() => {
+                if (el) el.scrollTop = 0
+                pausedRef.current = false
+              }, 1800)
+              return
+            }
+          }
+          last = ts
+        } else {
+          last = null
+        }
+        rafRef.current = requestAnimationFrame(tick)
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    }, 650)
+
+    return () => {
+      clearTimeout(startDelay)
+      cancelAnimationFrame(rafRef.current)
+      clearTimeout(resumeTimer.current)
+    }
+  }, [isVisible])
+
+  // Pause on any manual touch/scroll; resume 2.5 s after the last interaction
+  const handleUserScroll = () => {
+    pausedRef.current = true
+    clearTimeout(resumeTimer.current)
+    resumeTimer.current = setTimeout(() => {
+      pausedRef.current = false
+    }, 2500)
+  }
+
   return (
     <div
       className="meal-back-face"
@@ -207,7 +272,7 @@ function CardBack({ cfg, dishes, marked, hasMenu }) {
         width: '100%', height: '100%',
         display: 'flex', flexDirection: 'column',
         borderRadius: 20, overflow: 'hidden',
-        minHeight: 0,     /* ensure flex column constrains children */
+        minHeight: 0,
       }}
     >
       {/* Accent strip */}
@@ -244,13 +309,23 @@ function CardBack({ cfg, dishes, marked, hasMenu }) {
         )}
       </div>
 
-      {/* Dish list — scrollable, takes all remaining space */}
+      {/* Dish list — auto-scrolls, also manually scrollable */}
       <div
+        ref={scrollRef}
         className="no-scrollbar"
+        onScroll={handleUserScroll}
+        onTouchStart={() => {
+          pausedRef.current = true
+          clearTimeout(resumeTimer.current)
+        }}
+        onTouchEnd={() => {
+          clearTimeout(resumeTimer.current)
+          resumeTimer.current = setTimeout(() => { pausedRef.current = false }, 2500)
+        }}
         style={{
           flex: 1, overflowY: 'auto', padding: '0 11px 10px',
           WebkitOverflowScrolling: 'touch',
-          minHeight: 0,           /* critical: lets flex child shrink + scroll */
+          minHeight: 0,
         }}
       >
         {!hasMenu ? (
@@ -286,12 +361,12 @@ function CardBack({ cfg, dishes, marked, hasMenu }) {
           </div>
         )}
 
-        {/* Flip-back hint at bottom */}
+        {/* Hint */}
         {hasMenu && (
           <p style={{
             textAlign: 'center', fontSize: 10, fontWeight: 700,
             color: 'var(--text-muted)', letterSpacing: '0.06em',
-            marginTop: 8, opacity: 0.7,
+            marginTop: 8, opacity: 0.6,
           }}>
             TAP CARD TO FLIP BACK
           </p>
@@ -666,6 +741,7 @@ export default function MealCard({ mealType, menuItem, attendance, onMarkAttenda
               dishes={dishes}
               marked={marked}
               hasMenu={hasMenu}
+              isVisible={isFlipped}
             />
           }
         />
