@@ -199,8 +199,23 @@ function CardFront({ cfg, isSpecial, isActive, marked, hasMenu }) {
 }
 
 // ── BACK face ─────────────────────────────────────────────────────────────────
-// No scroll needed — card height is calculated to fit all dishes at once.
+// Card height is fixed. Row density (font + padding) scales with dish count
+// so every item is visible without scrolling.
 function CardBack({ cfg, dishes, marked, hasMenu }) {
+  const n = dishes.length
+
+  // Scale rows to fill the fixed card height without overflow
+  // Available for list ≈ 230 - 3(strip) - 52(header) - 20(list padding) - 18(hint) = ~137px
+  const rowFontSize  = n <= 4 ? 12.5 : n <= 6 ? 11.5 : n <= 8 ? 10.5 : 9.5
+  const rowPadV      = n <= 4 ? '7px' : n <= 6 ? '5px' : n <= 8 ? '3.5px' : '2.5px'
+  const hintSize     = n >= 8 ? 9 : 10
+  const hintMt       = n >= 7 ? 4 : 6
+  const headerPad    = n >= 8 ? '7px 14px 5px' : '10px 14px 8px'
+  const iconSize     = n >= 8 ? 28 : 34
+  const iconFs       = n >= 8 ? 14 : 17
+  const labelFs      = n >= 8 ? 12 : 14
+  const timeFs       = n >= 8 ? 9 : 10
+
   return (
     <div
       className="meal-back-face"
@@ -216,22 +231,22 @@ function CardBack({ cfg, dishes, marked, hasMenu }) {
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
-        padding: '10px 14px 8px', flexShrink: 0,
+        padding: headerPad, flexShrink: 0,
       }}>
         <div style={{
-          width: 34, height: 34, borderRadius: 11, flexShrink: 0,
+          width: iconSize, height: iconSize, borderRadius: 11, flexShrink: 0,
           background: cfg.gradient,
           boxShadow: `0 3px 12px ${cfg.shadowColor}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 17,
+          fontSize: iconFs,
         }}>
           {cfg.emoji}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: 14, fontWeight: 900, color: 'var(--text-primary)', margin: 0, lineHeight: 1.1 }}>
+          <p style={{ fontSize: labelFs, fontWeight: 900, color: 'var(--text-primary)', margin: 0, lineHeight: 1.1 }}>
             {cfg.label}
           </p>
-          <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0, fontWeight: 600 }}>
+          <p style={{ fontSize: timeFs, color: 'var(--text-muted)', margin: 0, fontWeight: 600 }}>
             {cfg.time}
           </p>
         </div>
@@ -244,8 +259,8 @@ function CardBack({ cfg, dishes, marked, hasMenu }) {
         )}
       </div>
 
-      {/* Dish list — full height, no scroll */}
-      <div style={{ padding: '0 11px 12px', flex: 1 }}>
+      {/* Dish list — fills remaining space, no scroll */}
+      <div style={{ padding: '0 11px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         {!hasMenu ? (
           <p style={{ fontSize: 12, fontStyle: 'italic', color: 'var(--text-muted)', padding: '8px 3px' }}>
             Menu not posted yet
@@ -259,18 +274,20 @@ function CardBack({ cfg, dishes, marked, hasMenu }) {
                 key={i}
                 className="meal-dish-row"
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 9,
-                  padding: '8px 11px',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: `${rowPadV} 11px`,
                   background: i % 2 === 0 ? 'var(--dish-odd)' : 'var(--dish-even)',
                   borderBottom: i < dishes.length - 1 ? '1px solid var(--dish-border)' : 'none',
                 }}
               >
                 <span style={{
-                  width: 5, height: 5, borderRadius: '50%',
+                  width: 4, height: 4, borderRadius: '50%',
                   background: cfg.dotColor, flexShrink: 0,
                 }} />
                 <span style={{
-                  fontSize: 12.5, fontWeight: 500, color: 'var(--dish-text)', lineHeight: 1.4,
+                  fontSize: rowFontSize, fontWeight: 500,
+                  color: 'var(--dish-text)', lineHeight: 1.3,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>
                   {dish}
                 </span>
@@ -281,9 +298,9 @@ function CardBack({ cfg, dishes, marked, hasMenu }) {
 
         {/* Flip-back hint */}
         <p style={{
-          textAlign: 'center', fontSize: 10, fontWeight: 700,
+          textAlign: 'center', fontSize: hintSize, fontWeight: 700,
           color: 'var(--text-muted)', letterSpacing: '0.06em',
-          marginTop: 8, opacity: 0.55,
+          marginTop: hintMt, opacity: 0.5,
         }}>
           TAP TO FLIP BACK
         </p>
@@ -542,16 +559,7 @@ export default function MealCard({ mealType, menuItem, attendance, onMarkAttenda
   const marked = Boolean(attendance)
   const dishes = parseDishes(menuItem?.items)
 
-  // ── Dynamic card height ────────────────────────────────────────────────────
-  // Back face: accent(3) + header(54) + padding(20) + hint(26) = 103 base
-  //            + each dish row ~36px
-  // Front face minimum: 210px (good photo crop)
-  const DISH_ROW_H  = 36
-  const BACK_BASE_H = 103
-  const FRONT_MIN_H = 210
-  const cardHeight  = hasMenu && dishes.length > 0
-    ? Math.max(FRONT_MIN_H, BACK_BASE_H + dishes.length * DISH_ROW_H)
-    : FRONT_MIN_H
+  const cardHeight = 230   // fixed — text scales to fit, not the card
 
   // ── Touch-safe flip toggle ─────────────────────────────────────────────────
   // Track touch start position so we only flip on a genuine tap (< 8px movement)
