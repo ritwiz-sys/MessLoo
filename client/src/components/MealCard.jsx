@@ -102,7 +102,7 @@ function FoodPhoto({ cfg }) {
 // ── FRONT face ────────────────────────────────────────────────────────────────
 function CardFront({ cfg, isSpecial, isActive, marked, hasMenu }) {
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', borderRadius: 20 }}>
 
       {/* 1. Photo */}
       <FoodPhoto cfg={cfg} />
@@ -111,6 +111,14 @@ function CardFront({ cfg, isSpecial, isActive, marked, hasMenu }) {
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.15) 40%, transparent 65%)',
+      }} />
+
+      {/* Glass border ring — gives the card a proper framed look */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10,
+        borderRadius: 20,
+        border: '1.5px solid rgba(255,255,255,0.22)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), inset 0 -1px 0 rgba(0,0,0,0.18)',
       }} />
 
       {/* ── TOP ROW: badges ── */}
@@ -191,7 +199,7 @@ function CardFront({ cfg, isSpecial, isActive, marked, hasMenu }) {
 }
 
 // ── BACK face ─────────────────────────────────────────────────────────────────
-function CardBack({ cfg, dishes, marked, hasMenu, onMarkClick }) {
+function CardBack({ cfg, dishes, marked, hasMenu }) {
   return (
     <div
       className="meal-back-face"
@@ -199,6 +207,7 @@ function CardBack({ cfg, dishes, marked, hasMenu, onMarkClick }) {
         width: '100%', height: '100%',
         display: 'flex', flexDirection: 'column',
         borderRadius: 20, overflow: 'hidden',
+        minHeight: 0,     /* ensure flex column constrains children */
       }}
     >
       {/* Accent strip */}
@@ -235,12 +244,13 @@ function CardBack({ cfg, dishes, marked, hasMenu, onMarkClick }) {
         )}
       </div>
 
-      {/* Dish list — scrollable, takes remaining space */}
+      {/* Dish list — scrollable, takes all remaining space */}
       <div
         className="no-scrollbar"
         style={{
-          flex: 1, overflowY: 'auto', padding: '0 11px 6px',
+          flex: 1, overflowY: 'auto', padding: '0 11px 10px',
           WebkitOverflowScrolling: 'touch',
+          minHeight: 0,           /* critical: lets flex child shrink + scroll */
         }}
       >
         {!hasMenu ? (
@@ -257,7 +267,7 @@ function CardBack({ cfg, dishes, marked, hasMenu, onMarkClick }) {
                 className="meal-dish-row"
                 style={{
                   display: 'flex', alignItems: 'center', gap: 9,
-                  padding: '7px 11px',
+                  padding: '8px 11px',
                   background: i % 2 === 0 ? 'var(--dish-odd)' : 'var(--dish-even)',
                   borderBottom: i < dishes.length - 1 ? '1px solid var(--dish-border)' : 'none',
                 }}
@@ -267,7 +277,7 @@ function CardBack({ cfg, dishes, marked, hasMenu, onMarkClick }) {
                   background: cfg.dotColor, flexShrink: 0,
                 }} />
                 <span style={{
-                  fontSize: 12, fontWeight: 500, color: 'var(--dish-text)', lineHeight: 1.35,
+                  fontSize: 12.5, fontWeight: 500, color: 'var(--dish-text)', lineHeight: 1.4,
                 }}>
                   {dish}
                 </span>
@@ -275,35 +285,18 @@ function CardBack({ cfg, dishes, marked, hasMenu, onMarkClick }) {
             ))}
           </div>
         )}
-      </div>
 
-      {/* CTA button */}
-      {hasMenu && (
-        <div style={{ padding: '5px 11px 11px', flexShrink: 0 }}>
-          <button
-            className="meal-cta-btn"
-            onTouchEnd={(e) => { e.stopPropagation(); }}
-            onClick={(e) => { e.stopPropagation(); onMarkClick() }}
-            disabled={marked}
-            style={{
-              width: '100%',
-              minHeight: 44,           /* touch target */
-              padding: '10px 0',
-              borderRadius: 13,
-              border: 'none',
-              background: marked ? 'var(--dish-odd)' : cfg.gradient,
-              color: marked ? 'var(--text-muted)' : '#fff',
-              fontSize: 12,
-              fontWeight: 900,
-              letterSpacing: '0.06em',
-              cursor: marked ? 'default' : 'pointer',
-              boxShadow: marked ? 'none' : `0 5px 18px ${cfg.shadowColor}`,
-            }}
-          >
-            {marked ? '✓ ATTENDANCE MARKED' : "I'LL EAT THIS  →"}
-          </button>
-        </div>
-      )}
+        {/* Flip-back hint at bottom */}
+        {hasMenu && (
+          <p style={{
+            textAlign: 'center', fontSize: 10, fontWeight: 700,
+            color: 'var(--text-muted)', letterSpacing: '0.06em',
+            marginTop: 8, opacity: 0.7,
+          }}>
+            TAP CARD TO FLIP BACK
+          </p>
+        )}
+      </div>
     </div>
   )
 }
@@ -673,7 +666,6 @@ export default function MealCard({ mealType, menuItem, attendance, onMarkAttenda
               dishes={dishes}
               marked={marked}
               hasMenu={hasMenu}
-              onMarkClick={() => setShowModal(true)}
             />
           }
         />
