@@ -44,7 +44,8 @@ router.post('/', verifyAuth, async (req, res) => {
 // GET /feedback — role-based fetch
 router.get('/', verifyAuth, async (req, res) => {
   const user = await getOrCreateUser(req.userId, req.block)
-  if (!user) return res.status(404).json({ error: 'User not found' })
+  // Return empty list rather than 404 — user just hasn't submitted feedback yet
+  if (!user) return res.json({ data: [] })
 
   if (user.role === 'kitchen_staff') {
     return res.status(403).json({ error: 'Not authorized' })

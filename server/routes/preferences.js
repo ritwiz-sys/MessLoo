@@ -8,7 +8,8 @@ const getOrCreateUser = require('../helpers/getOrCreateUser')
 router.get('/', verifyAuth, async (req, res) => {
   const user = await getOrCreateUser(req.userId, req.block)
   const userId = user?.id
-  if (!userId) return res.status(404).json({ error: 'User not found' })
+  // Return empty prefs rather than 404 — user just hasn't interacted yet
+  if (!userId) return res.json({ data: null })
 
   const { data, error } = await supabase
     .from('preferences')
@@ -28,7 +29,7 @@ router.get('/', verifyAuth, async (req, res) => {
 router.post('/', verifyAuth, async (req, res) => {
   const user = await getOrCreateUser(req.userId, req.block)
   const userId = user?.id
-  if (!userId) return res.status(404).json({ error: 'User not found' })
+  if (!userId) return res.status(400).json({ error: 'Could not resolve user' })
 
   const {
     liked_dishes,

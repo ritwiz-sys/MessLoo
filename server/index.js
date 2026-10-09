@@ -10,6 +10,7 @@ const corsOptions = {
   origin: [
     'http://localhost:5173',
     /\.netlify\.app$/,
+    /\.onrender\.com$/,
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'x-block'],

@@ -1,0 +1,476 @@
+/* ── PlateRevealPage  ·  Static Image Hero + Features ───────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* ═══ PAGE ════════════════════════════════════════════════════════════════ */
+.prp-page {
+  min-height: 100vh;
+  background: #f5ede0;
+}
+
+/* ═══ HERO ════════════════════════════════════════════════════════════════ */
+.prp-hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+
+  /* The plate image — fixed for parallax while scrolling */
+  background-image: url('/hero-bg.png');
+  background-size: cover;
+  background-position: center right;
+  background-attachment: fixed;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* Left-side gradient so text is readable over the cream background */
+.prp-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right,
+      rgba(245,237,224,0.82) 0%,
+      rgba(245,237,224,0.55) 42%,
+      rgba(245,237,224,0.10) 65%,
+      transparent 80%
+    ),
+    linear-gradient(to bottom,
+      rgba(245,237,224,0.30) 0%,
+      transparent 20%,
+      transparent 80%,
+      rgba(245,237,224,0.30) 100%
+    );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ═══ WORDMARK ════════════════════════════════════════════════════════════ */
+.prp-wordmark {
+  position: absolute;
+  top: 28px;
+  left: 40px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.prp-wordmark-name {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #2a1a08;
+  display: block;
+}
+.prp-wordmark-tag {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(42,26,8,0.42);
+  display: block;
+}
+
+/* ═══ HERO TEXT — left column ════════════════════════════════════════════ */
+.prp-hero-text {
+  position: relative;
+  z-index: 10;
+  padding: 0 40px;
+  max-width: 520px;
+  animation: prpFadeUp 0.9s 0.2s cubic-bezier(.22,1,.36,1) both;
+}
+
+@keyframes prpFadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.prp-hero-eyebrow {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(42,26,8,0.42);
+  margin: 0 0 18px;
+}
+
+.prp-hero-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(52px, 8vw, 88px);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: #2a1a08;
+  margin: 0 0 22px;
+}
+.prp-hero-title em {
+  font-style: italic;
+  color: rgba(140,80,20,0.80);
+}
+
+.prp-hero-sub {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(14px, 1.6vw, 16px);
+  color: rgba(42,26,8,0.58);
+  line-height: 1.65;
+  margin: 0 0 36px;
+  max-width: 380px;
+}
+
+/* ── Feature pills under sub-copy ─────────────────────────────────────── */
+.prp-hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 32px;
+}
+.prp-pill {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(42,26,8,0.65);
+  background: rgba(255,252,246,0.75);
+  border: 1px solid rgba(180,140,90,0.22);
+  border-radius: 100px;
+  padding: 6px 14px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ── Floating badges — right side over the plate ──────────────────────── */
+.prp-hero-badges {
+  position: absolute;
+  right: clamp(24px, 8vw, 100px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  pointer-events: none;
+}
+
+.prp-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,252,246,0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(180,140,90,0.20);
+  border-radius: 16px;
+  padding: 12px 18px;
+  box-shadow: 0 4px 24px rgba(42,22,8,0.10), 0 1px 0 rgba(255,255,255,0.9) inset;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(42,26,8,0.70);
+  white-space: nowrap;
+}
+
+/* Stagger entrance animations */
+.prp-badge--top { animation: badgePop .7s .5s cubic-bezier(.22,1,.36,1) both; }
+.prp-badge--mid { animation: badgePop .7s .7s cubic-bezier(.22,1,.36,1) both; }
+.prp-badge--bot { animation: badgePop .7s .9s cubic-bezier(.22,1,.36,1) both; }
+
+@keyframes badgePop {
+  from { opacity: 0; transform: translateX(20px) scale(.92); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+/* Live dot */
+.prp-badge-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.prp-badge-dot--green {
+  background: #3cb97a;
+  box-shadow: 0 0 0 3px rgba(60,185,122,0.22);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(60,185,122,0.22); }
+  50%       { box-shadow: 0 0 0 6px rgba(60,185,122,0.10); }
+}
+
+/* Big rating number badge */
+.prp-badge--mid {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 14px 20px;
+}
+.prp-badge-num {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 36px;
+  font-weight: 400;
+  line-height: 1;
+  color: #2a1a08;
+  letter-spacing: -0.02em;
+}
+.prp-badge-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(42,26,8,0.45);
+  letter-spacing: 0.02em;
+}
+
+.prp-badge-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* ── Marquee strip ─────────────────────────────────────────────────────── */
+.prp-marquee-wrap {
+  overflow: hidden;
+  background: #2a1a08;
+  padding: 14px 0;
+  position: relative;
+  z-index: 10;
+}
+.prp-marquee-track {
+  display: flex;
+  gap: 0;
+  animation: marqueeScroll 28s linear infinite;
+  width: max-content;
+}
+@keyframes marqueeScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.prp-marquee-item {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(245,237,224,0.65);
+  padding: 0 40px;
+  white-space: nowrap;
+}
+.prp-marquee-item:nth-child(odd) {
+  color: rgba(245,237,224,0.90);
+}
+
+.prp-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 36px;
+  border-radius: 100px;
+  background: #2a1a08;
+  color: #f5ede0;
+  border: 1px solid #2a1a08;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 6px 24px rgba(42,26,8,0.18);
+}
+.prp-hero-cta:hover {
+  background: #3d2810;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 32px rgba(42,26,8,0.26);
+}
+.prp-hero-cta:active {
+  transform: scale(0.96);
+}
+
+/* ═══ AFTER / FEATURES ═══════════════════════════════════════════════════ */
+.prp-after {
+  background: #f5ede0;
+  position: relative;
+  z-index: 5;
+}
+
+.prp-features {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: clamp(80px, 12vw, 140px) 40px clamp(60px, 8vw, 100px);
+}
+
+.prp-feature-eyebrow {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(90,60,30,0.40);
+  margin-bottom: 16px;
+}
+
+.prp-feature-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(34px, 6vw, 56px);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: #2a1a08;
+  margin: 0 0 clamp(48px, 7vw, 80px);
+}
+.prp-feature-title em {
+  font-style: italic;
+  color: rgba(90,60,30,0.65);
+}
+
+.prp-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2px;
+}
+
+.prp-feature-card {
+  padding: clamp(24px, 4vw, 40px) clamp(20px, 3vw, 32px);
+  background: rgba(255,255,255,0.45);
+  border: 1px solid rgba(180,140,90,0.14);
+  transition: background 0.25s ease, transform 0.25s ease;
+}
+.prp-feature-card:hover {
+  background: rgba(255,255,255,0.70);
+  transform: translateY(-2px);
+}
+
+.prp-feature-icon {
+  font-size: 22px;
+  display: block;
+  margin-bottom: 16px;
+}
+.prp-feature-head {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  color: #2a1a08;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+.prp-feature-body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  line-height: 1.65;
+  color: rgba(42,26,8,0.52);
+  margin: 0;
+}
+
+/* ═══ CTA ═════════════════════════════════════════════════════════════════*/
+.prp-cta {
+  text-align: center;
+  padding: clamp(80px, 12vw, 120px) 40px clamp(80px, 12vw, 120px);
+  border-top: 1px solid rgba(180,140,90,0.14);
+  position: relative;
+}
+.prp-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(220,180,120,0.16) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.prp-cta-eye {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(90,60,30,0.40);
+  margin: 0 0 20px;
+}
+.prp-cta-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(40px, 8vw, 72px);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: #2a1a08;
+  margin: 0 0 18px;
+  line-height: 1.05;
+}
+.prp-cta-sub {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(14px, 2vw, 16px);
+  color: rgba(42,26,8,0.48);
+  margin: 0 auto 40px;
+  max-width: 420px;
+  line-height: 1.6;
+}
+.prp-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 40px;
+  border-radius: 100px;
+  background: #2a1a08;
+  color: #f5ede0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 32px rgba(42,26,8,0.22);
+}
+.prp-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgba(42,26,8,0.30);
+}
+.prp-cta-btn:active { transform: scale(0.96); }
+.prp-cta-fine {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11px;
+  color: rgba(42,26,8,0.28);
+  margin: 20px 0 0;
+  letter-spacing: 0.04em;
+}
+
+/* ═══ FOOTER ══════════════════════════════════════════════════════════════ */
+.prp-footer {
+  text-align: center;
+  padding: 20px 40px;
+  border-top: 1px solid rgba(180,140,90,0.10);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: rgba(90,60,30,0.28);
+  text-transform: uppercase;
+}
+
+/* ═══ RESPONSIVE ══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* On mobile, fixed-attachment doesn't work on iOS — fall back to scroll */
+  .prp-hero {
+    background-attachment: scroll;
+    background-position: 65% center;
+  }
+  .prp-hero-text {
+    padding: 0 24px;
+    max-width: 100%;
+  }
+  /* Stronger left overlay on mobile so text is always readable */
+  .prp-hero-overlay {
+    background:
+      linear-gradient(to right,
+        rgba(245,237,224,0.92) 0%,
+        rgba(245,237,224,0.80) 55%,
+        rgba(245,237,224,0.30) 80%,
+        transparent 100%
+      );
+  }
+  .prp-wordmark { top: 20px; left: 24px; }
+  .prp-features { padding: 60px 20px; }
+  .prp-cta { padding: 60px 20px 80px; }
+  .prp-feature-grid { gap: 1px; }
+
+  /* Hide floating badges on small screens — too cramped */
+  .prp-hero-badges { display: none; }
+
+  /* Wrap pills on mobile */
+  .prp-hero-pills { gap: 6px; }
+  .prp-pill { font-size: 11px; padding: 5px 12px; }
+}

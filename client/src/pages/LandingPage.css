@@ -1,0 +1,308 @@
+/* ── MessLoo Landing  ·  Static Image Hero ───────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+/* ═══ PAGE ════════════════════════════════════════════════════════════════ */
+.lp-page {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+
+  /* Plate image background */
+  background-image: url('/hero-bg.png');
+  background-size: cover;
+  background-position: center right;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* ═══ OVERLAY ════════════════════════════════════════════════════════════ */
+/* Warm left gradient so text/cards are readable over the cream image */
+.lp-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right,
+      rgba(245,237,224,0.78) 0%,
+      rgba(245,237,224,0.50) 38%,
+      rgba(245,237,224,0.08) 62%,
+      transparent 78%
+    ),
+    linear-gradient(to top,
+      rgba(236,224,208,0.96) 0%,
+      rgba(236,224,208,0.60) 28%,
+      transparent 50%
+    ),
+    linear-gradient(to bottom,
+      rgba(20,10,3,0.28) 0%,
+      transparent 18%
+    );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ═══ BRAND (top) ════════════════════════════════════════════════════════ */
+.lp-brand {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: clamp(32px, 7vh, 64px) clamp(24px, 6vw, 60px) 0;
+  animation: lpFadeUp .7s .1s cubic-bezier(.22,1,.36,1) both;
+  pointer-events: none;
+}
+
+@keyframes lpFadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.lp-eyebrow {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .26em;
+  text-transform: uppercase;
+  color: rgba(42,22,8,.42);
+  margin: 0 0 12px;
+}
+
+.lp-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(52px, 12vw, 96px);
+  font-weight: 900;
+  letter-spacing: -.062em;
+  line-height: .92;
+  color: #1a0e06;
+  margin: 0 0 10px;
+}
+
+/* Gold rule under title */
+.lp-brand::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 1.5px;
+  background: linear-gradient(90deg, rgba(175,126,38,.70), transparent);
+  margin: 12px 0 10px;
+}
+
+.lp-tagline {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  font-style: italic;
+  font-weight: 400;
+  color: rgba(42,22,8,.40);
+  letter-spacing: .04em;
+  margin: 0;
+}
+
+/* ═══ CARDS (bottom panel) ═══════════════════════════════════════════════ */
+.lp-cards {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  background: linear-gradient(to top,
+    rgba(236,224,208,0.98) 0%,
+    rgba(236,224,208,0.92) 65%,
+    rgba(236,224,208,0.0) 100%);
+
+  padding: clamp(28px, 6vh, 48px) 20px max(env(safe-area-inset-bottom, 40px), 40px);
+  animation: lpFadeUp .7s .25s cubic-bezier(.22,1,.36,1) both;
+}
+
+.lp-cards-head {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.lp-cards-eye {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(42,22,8,.38);
+  margin: 0 0 4px;
+}
+
+.lp-cards-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(24px, 7vw, 32px);
+  font-weight: 900;
+  letter-spacing: -.04em;
+  color: #1a0e06;
+  margin: 0;
+  text-shadow: 0 1px 0 rgba(255,255,255,.6);
+}
+
+/* ── Card base ─────────────────────────────────────────────────────────── */
+.lp-card {
+  width: 100%; max-width: 400px;
+  display: flex; align-items: center;
+  gap: 14px; padding: 16px 18px;
+  border-radius: 20px;
+  cursor: pointer; text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  margin-bottom: 10px;
+  border: none; outline: none;
+  transition:
+    box-shadow .26s cubic-bezier(.22,1,.36,1),
+    transform  .26s cubic-bezier(.34,1.56,.64,1);
+}
+.lp-card:last-of-type { margin-bottom: 0; }
+
+.lp-card:active {
+  transform: scale(.952) !important;
+  transition: transform .08s ease !important;
+}
+
+.lp-exit {
+  animation: cardExit .42s cubic-bezier(.22,1,.36,1) forwards !important;
+}
+@keyframes cardExit {
+  0%   { transform: scale(1);    opacity: 1; }
+  35%  { transform: scale(1.05); }
+  100% { transform: scale(.86);  opacity: 0; }
+}
+
+/* Student */
+.lp-card--s {
+  background: #fff;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1.5px solid rgba(220,52,62,.18);
+  box-shadow:
+    0 2px 0 rgba(255,255,255,.9) inset,
+    0 8px 32px rgba(42,22,8,.12),
+    0 2px 8px rgba(220,52,62,.08);
+}
+.lp-card--s:hover {
+  transform: translateY(-3px) scale(1.01) !important;
+  box-shadow:
+    0 2px 0 rgba(255,255,255,.9) inset,
+    0 18px 48px rgba(42,22,8,.18),
+    0 0 0 2px rgba(220,52,62,.30);
+}
+
+/* Admin */
+.lp-card--a {
+  background: rgba(255,255,255,.78);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1.5px solid rgba(175,126,38,.18);
+  box-shadow:
+    0 2px 0 rgba(255,255,255,.7) inset,
+    0 6px 24px rgba(42,22,8,.08);
+}
+.lp-card--a:hover {
+  transform: translateY(-3px) scale(1.01) !important;
+  box-shadow:
+    0 2px 0 rgba(255,255,255,.7) inset,
+    0 18px 44px rgba(42,22,8,.14),
+    0 0 0 2px rgba(175,126,38,.28);
+}
+
+/* Icon */
+.lp-icon {
+  font-size: 22px;
+  width: 50px; height: 50px;
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.lp-icon--s {
+  background: linear-gradient(145deg, #FFE8E9, #FFD2D4);
+  box-shadow: 0 4px 16px rgba(220,52,62,.18), inset 0 1px 0 rgba(255,255,255,.7);
+}
+.lp-icon--a {
+  background: linear-gradient(145deg, #FFF3D6, #FFE8A8);
+  box-shadow: 0 4px 16px rgba(175,126,38,.18), inset 0 1px 0 rgba(255,255,255,.7);
+}
+
+/* Text */
+.lp-card-text {
+  flex: 1; display: flex; flex-direction: column;
+  gap: 3px; min-width: 0;
+}
+.lp-card-text strong {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px; font-weight: 800;
+  color: #1a0e06; letter-spacing: -.01em;
+}
+.lp-card-text span {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11px; font-weight: 500;
+  color: rgba(42,22,8,.42);
+}
+
+/* Chevron */
+.lp-chevron {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1);
+}
+.lp-chev--s { background: linear-gradient(135deg,#E23744,#C0392B); color: #fff; }
+.lp-chev--a { background: linear-gradient(135deg,#D4A017,#B8860B); color: #fff; }
+.lp-chevron svg { width: 14px; height: 14px; }
+.lp-card:hover .lp-chevron { transform: translateX(4px); }
+
+/* Footer */
+.lp-footer {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 9px; font-weight: 500;
+  letter-spacing: .08em;
+  color: rgba(42,22,8,.24);
+  margin-top: 14px;
+  text-transform: uppercase;
+}
+
+/* ═══ RESPONSIVE ══════════════════════════════════════════════════════════ */
+@media (max-height: 680px) {
+  .lp-brand       { padding-top: 20px; }
+  .lp-brand::after { display: none; }
+  .lp-title       { font-size: 48px; }
+  .lp-card        { padding: 12px 14px; margin-bottom: 8px; }
+  .lp-cards-title { font-size: 22px; }
+  .lp-cards-head  { margin-bottom: 12px; }
+  .lp-icon        { width: 42px; height: 42px; font-size: 18px; border-radius: 13px; }
+  .lp-footer      { margin-top: 10px; }
+  .lp-cards       { padding-left: 16px; padding-right: 16px; }
+}
+
+@media (max-width: 380px) {
+  .lp-title { font-size: clamp(44px, 14vw, 64px); }
+  .lp-card  { padding: 13px 14px; gap: 11px; }
+}
+
+/* Mobile: push image focus to show the plate better */
+@media (max-width: 600px) {
+  .lp-page { background-position: 68% center; }
+  .lp-overlay {
+    background:
+      linear-gradient(to right,
+        rgba(245,237,224,0.88) 0%,
+        rgba(245,237,224,0.60) 50%,
+        rgba(245,237,224,0.15) 80%,
+        transparent 100%
+      ),
+      linear-gradient(to top,
+        rgba(236,224,208,0.98) 0%,
+        rgba(236,224,208,0.70) 32%,
+        transparent 55%
+      ),
+      linear-gradient(to bottom,
+        rgba(20,10,3,0.22) 0%,
+        transparent 15%
+      );
+  }
+}

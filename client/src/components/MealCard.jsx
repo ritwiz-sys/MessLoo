@@ -11,13 +11,11 @@ const MEAL_CONFIG = {
     time: '7:30 – 9:00 AM',
     gradient: 'linear-gradient(145deg, #FF9966 0%, #FF5E62 100%)',
     shadowColor: 'rgba(255,94,98,0.55)',
-    glowColor: 'rgba(255,94,98,0.42)',
+    glowColor: 'rgba(130,80,255,0.60)',
     dotColor: '#FF7A7A',
     accentHex: '#FF5E62',
-    foodImage: '/breakfast.jpg',
-    foodEmoji: '🥣',
-    // Best crop position for each photo
-    imgPosition: 'center 30%',
+    foodImage: '/breakfast-bg.png',
+    imgPosition: 'center 40%',
   },
   lunch: {
     label: 'Lunch',
@@ -25,25 +23,23 @@ const MEAL_CONFIG = {
     time: '12:00 – 2:00 PM',
     gradient: 'linear-gradient(145deg, #EB3349 0%, #F45C43 100%)',
     shadowColor: 'rgba(235,51,73,0.55)',
-    glowColor: 'rgba(235,51,73,0.42)',
+    glowColor: 'rgba(130,80,255,0.60)',
     dotColor: '#EB3349',
     accentHex: '#EB3349',
-    foodImage: '/lunch.jpg',
-    foodEmoji: '🍛',
-    imgPosition: 'center 45%',
+    foodImage: '/lunch-bg.png',
+    imgPosition: 'center 35%',
   },
   snacks: {
-    label: 'Evening Snacks',
+    label: 'Snacks',
     emoji: '🧆',
     time: '4:00 – 5:30 PM',
     gradient: 'linear-gradient(145deg, #F7971E 0%, #FFD200 100%)',
     shadowColor: 'rgba(247,151,30,0.55)',
-    glowColor: 'rgba(247,151,30,0.42)',
+    glowColor: 'rgba(130,80,255,0.60)',
     dotColor: '#F7971E',
     accentHex: '#F7971E',
-    foodImage: '/snacks.jpg',
-    foodEmoji: '🧆',
-    imgPosition: 'center 40%',
+    foodImage: '/snacks-bg.png',
+    imgPosition: 'center 45%',
   },
   dinner: {
     label: 'Dinner',
@@ -51,12 +47,11 @@ const MEAL_CONFIG = {
     time: '7:00 – 9:30 PM',
     gradient: 'linear-gradient(145deg, #C94B4B 0%, #8B0000 100%)',
     shadowColor: 'rgba(201,75,75,0.55)',
-    glowColor: 'rgba(139,0,0,0.5)',
+    glowColor: 'rgba(130,80,255,0.60)',
     dotColor: '#C94B4B',
     accentHex: '#C94B4B',
-    foodImage: '/dinner.jpg',
-    foodEmoji: '🫓',
-    imgPosition: 'center 55%',
+    foodImage: '/dinner-bg.png',
+    imgPosition: 'center 40%',
   },
 }
 
@@ -67,64 +62,59 @@ function parseDishes(str) {
   return str.split(/[,;|\/]/).map((s) => s.trim()).filter(Boolean)
 }
 
-// ── Food photo ────────────────────────────────────────────────────────────────
-function FoodPhoto({ cfg }) {
-  const [errored, setErrored] = useState(false)
-  if (errored) {
-    return (
-      <div style={{
-        width: '100%', height: '100%',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 64, opacity: 0.28, background: cfg.gradient,
-      }}>
-        {cfg.foodEmoji}
-      </div>
-    )
-  }
-  return (
-    <img
-      src={cfg.foodImage}
-      alt=""
-      className="meal-front-img"
-      onError={() => setErrored(true)}
-      style={{
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-        objectPosition: cfg.imgPosition,
-        display: 'block',
-        filter: 'saturate(1.1) contrast(1.02)',
-      }}
-    />
-  )
-}
-
 // ── FRONT face ────────────────────────────────────────────────────────────────
-function CardFront({ cfg, isSpecial, isActive, marked, hasMenu }) {
+// Photo mode  → full-bleed image, name/time/badges overlay, no menu items
+// Gradient mode → full gradient with name/time/badges, no menu items
+// Menu is revealed ONLY on the flip (back face)
+function CardFront({ cfg, isSpecial, isActive, marked, hasMenu, dishes }) {
+  const [imgErr, setImgErr] = useState(false)
+  const hasPhoto = Boolean(cfg.foodImage) && !imgErr
+
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', borderRadius: 20 }}>
+    <div style={{
+      width: '100%', height: '100%',
+      borderRadius: 22, overflow: 'hidden',
+      position: 'relative',
+      background: cfg.gradient,
+    }}>
 
-      {/* 1. Photo */}
-      <FoodPhoto cfg={cfg} />
+      {/* ── Full-bleed photo ── */}
+      {hasPhoto && (
+        <img
+          src={cfg.foodImage}
+          alt=""
+          onError={() => setImgErr(true)}
+          style={{
+            position: 'absolute', inset: 0,
+            width: '100%', height: '100%',
+            objectFit: 'cover',
+            objectPosition: cfg.imgPosition || 'center 40%',
+            display: 'block',
+            filter: 'saturate(1.12) contrast(1.04) brightness(0.92)',
+          }}
+        />
+      )}
 
-      {/* Minimal bottom scrim — just enough to read the text */}
+      {/* Dark gradient scrim — bottom for text, subtle top for badges */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.15) 40%, transparent 65%)',
+        background: hasPhoto
+          ? 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.18) 50%, rgba(0,0,0,0.22) 100%)'
+          : 'linear-gradient(to top, rgba(0,0,0,0.30) 0%, transparent 50%)',
       }} />
 
-      {/* Glass border ring — gives the card a proper framed look */}
+      {/* Glass ring — purple/pink to echo MoltenMetal background */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10,
-        borderRadius: 20,
-        border: '1.5px solid rgba(255,255,255,0.22)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), inset 0 -1px 0 rgba(0,0,0,0.18)',
+        borderRadius: 22,
+        border: '1.5px solid rgba(160,100,255,0.55)',
+        boxShadow: 'inset 0 1px 0 rgba(255,130,252,0.28), 0 0 0 0.5px rgba(82,39,255,0.25)',
       }} />
 
-      {/* ── TOP ROW: badges ── */}
+      {/* ── Badges — top row ── */}
       <div style={{
-        position: 'absolute', top: 10, left: 12, right: 12,
-        display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center',
+        position: 'absolute', top: 10, left: 12, right: 12, zIndex: 5,
+        display: 'flex', gap: 5, alignItems: 'center',
       }}>
         {isSpecial && (
           <span style={{
@@ -143,48 +133,28 @@ function CardFront({ cfg, isSpecial, isActive, marked, hasMenu }) {
         )}
       </div>
 
-      {/* ── BOTTOM: frosted glass info bar ── */}
+      {/* ── Bottom info bar ── */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        padding: '20px 14px 14px',
-        // extra linear from bottom so text is always legible
-        background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.32) 70%, transparent 100%)',
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 5,
+        padding: '28px 16px 16px',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
       }}>
-        {/* Left: meal name + time */}
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
-            <p style={{
-              fontSize: 22, fontWeight: 900, color: '#fff', lineHeight: 1,
-              margin: 0, letterSpacing: '-0.02em',
-              textShadow: '0 1px 8px rgba(0,0,0,0.45)',
-            }}>
-              {cfg.label}
-            </p>
-            {isActive && (
-              <span style={{
-                fontSize: 9, fontWeight: 900, padding: '3px 8px', borderRadius: 100,
-                background: 'rgba(255,255,255,0.2)', color: '#fff',
-                backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', gap: 5,
-                letterSpacing: '0.08em', border: '1px solid rgba(255,255,255,0.3)',
-              }}>
-                <span className="meal-now-dot" style={{
-                  width: 6, height: 6, borderRadius: '50%', background: '#4ade80',
-                  display: 'inline-block', flexShrink: 0,
-                }} />
-                NOW
-              </span>
-            )}
-          </div>
           <p style={{
-            fontSize: 11, color: 'rgba(255,255,255,0.65)', margin: 0,
-            fontWeight: 600, letterSpacing: '0.01em',
+            fontSize: 24, fontWeight: 900, color: '#fff', lineHeight: 1,
+            margin: '0 0 5px', letterSpacing: '-0.03em',
+            textShadow: '0 2px 12px rgba(0,0,0,0.6)',
           }}>
-            {cfg.emoji}&nbsp; {cfg.time}
+            {cfg.label}
+          </p>
+          <p style={{
+            fontSize: 11, color: 'rgba(255,255,255,0.60)', margin: 0,
+            fontWeight: 600, letterSpacing: '0.02em',
+          }}>
+            {cfg.emoji}&nbsp;&nbsp;{cfg.time}
           </p>
         </div>
 
-        {/* Right: flip hint — only when has menu */}
         {hasMenu && (
           <div className="meal-flip-hint">
             SEE MENU
@@ -222,7 +192,7 @@ function CardBack({ cfg, dishes, marked, hasMenu }) {
       style={{
         width: '100%', height: '100%',
         display: 'flex', flexDirection: 'column',
-        borderRadius: 20, overflow: 'hidden',
+        borderRadius: 22, overflow: 'hidden',
       }}
     >
       {/* Accent strip */}
@@ -559,7 +529,7 @@ export default function MealCard({ mealType, menuItem, attendance, onMarkAttenda
   const marked = Boolean(attendance)
   const dishes = parseDishes(menuItem?.items)
 
-  const cardHeight = 230   // fixed — text scales to fit, not the card
+  const cardHeight = 260   // taller for better photo showcase
 
   // ── Touch-safe flip toggle ─────────────────────────────────────────────────
   // Track touch start position so we only flip on a genuine tap (< 8px movement)
@@ -632,7 +602,7 @@ export default function MealCard({ mealType, menuItem, attendance, onMarkAttenda
       {/* Outer wrapper — owns touch + click for flip */}
       <div
         ref={wrapRef}
-        className={`meal-card-outer ${hasMenu ? 'has-menu' : ''} ${isSpecial ? 'meal-card-special' : ''}`}
+        className={`meal-card-outer ${hasMenu ? 'has-menu' : ''} ${isSpecial ? 'meal-card-special' : ''} ${isActive ? 'meal-card-active' : ''}`}
         style={{ '--meal-glow': cfg.glowColor, cursor: hasMenu ? 'pointer' : 'default' }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -652,7 +622,7 @@ export default function MealCard({ mealType, menuItem, attendance, onMarkAttenda
           hoverScale={1.0}
           width={cardWidth}
           height={cardHeight}
-          radius={20}
+          radius={22}
           axis="y"
           perspective={900}
           stiffness={190}
@@ -668,6 +638,7 @@ export default function MealCard({ mealType, menuItem, attendance, onMarkAttenda
               isActive={isActive}
               marked={marked}
               hasMenu={hasMenu}
+              dishes={dishes}
             />
           }
           back={

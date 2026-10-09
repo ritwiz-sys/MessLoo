@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../hooks/useTheme'
 import MealCard from '../components/MealCard'
 import BottomTabBar from '../components/BottomTabBar'
+import MoltenMetal from '../components/MoltenMetal'
 
 const MEAL_ORDER = ['breakfast', 'lunch', 'snacks', 'dinner']
 
@@ -728,8 +729,48 @@ export default function StudentDashboard() {
     })
   }, [selectedDate])
 
+  // ── Theme-derived palette ─────────────────────────────────────────────────
+  const isLight = theme === 'light'
+  const accentColor  = isLight ? '#C25A00' : '#FFB830'
+  const accentBg     = isLight ? 'rgba(200,80,0,0.10)' : 'rgba(255,184,48,0.08)'
+  const accentBorder = isLight ? 'rgba(180,80,0,0.22)' : 'rgba(255,184,48,0.18)'
+  const accentText   = isLight ? 'rgba(160,70,0,0.72)' : 'rgba(255,184,48,0.65)'
+
   return (
-    <div className="min-h-screen" style={{ background: 'transparent', overflowX: 'hidden' }}>
+    <div className="min-h-screen" style={{
+      background: isLight ? '#fffcf5' : '#0d0d11',
+      overflowX: 'hidden', position: 'relative',
+      transition: 'background 0.5s ease',
+    }}>
+
+      {/* ── MoltenMetal WebGL background ── */}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 0,
+        pointerEvents: 'none',
+      }}>
+        <MoltenMetal
+          color1={isLight ? '#D94A00' : '#5227FF'}
+          color2={isLight ? '#FF8C00' : '#FF9FFC'}
+          color3={isLight ? '#FFD060' : '#FFFFFF'}
+          speed={isLight ? 0.28 : 0.35}
+          scale={isLight ? 3.5 : 4}
+          detail={3}
+          glow={isLight ? 2.2 : 1.6}
+          coreSize={isLight ? 0.14 : 0.1}
+          swirl={isLight ? 0.8 : 1}
+          fold={isLight ? -0.15 : -0.2}
+          blackPoint={isLight ? 0.01 : 0.05}
+          brightness={isLight ? 1.8 : 1.3}
+          colorMode="molten"
+          grain
+          grainIntensity={0.05}
+          mouseInteraction={false}
+          mouseStrength={0.3}
+          opacity={isLight ? 0.72 : 1}
+          lightMode={false}
+          backgroundColor="#000000"
+        />
+      </div>
 
       {pendingFeedback && (
         <FeedbackModal
@@ -747,14 +788,15 @@ export default function StudentDashboard() {
       <div
         className="sticky top-0 z-30 w-full"
         style={{
-          background: 'rgba(13,13,17,0.96)',
+          background: isLight ? 'rgba(255,252,245,0.96)' : 'rgba(13,13,17,0.96)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
-          borderBottom: '1px solid rgba(255,184,48,0.08)',
+          borderBottom: isLight ? '1px solid rgba(200,120,0,0.14)' : '1px solid rgba(255,184,48,0.08)',
+          transition: 'background 0.4s ease, border-color 0.4s ease',
         }}
       >
         <div
-          className="flex items-center justify-between px-5 max-w-lg mx-auto"
+          className="flex items-center justify-between px-5 max-w-2xl mx-auto"
           style={{
             paddingTop: 'max(46px, calc(env(safe-area-inset-top, 0px) + 12px))',
             paddingBottom: 12,
@@ -765,13 +807,16 @@ export default function StudentDashboard() {
             <button
               onClick={() => setShowMenu(v => !v)}
               className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-90"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{
+                background: isLight ? 'rgba(200,80,0,0.10)' : 'rgba(130,80,255,0.12)',
+                border: isLight ? '1px solid rgba(180,80,0,0.28)' : '1px solid rgba(160,100,255,0.28)',
+              }}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="0" y="0" width="7" height="7" rx="2" fill="rgba(255,255,255,0.75)" />
-                <rect x="9" y="0" width="7" height="7" rx="2" fill="#FFB830" />
-                <rect x="0" y="9" width="7" height="7" rx="2" fill="rgba(255,255,255,0.75)" />
-                <rect x="9" y="9" width="7" height="7" rx="2" fill="rgba(255,255,255,0.35)" />
+                <rect x="0" y="0" width="7" height="7" rx="2" fill={isLight ? 'rgba(140,50,0,0.80)' : 'rgba(255,255,255,0.75)'} />
+                <rect x="9" y="0" width="7" height="7" rx="2" fill={isLight ? '#E8500A' : '#FF9FFC'} />
+                <rect x="0" y="9" width="7" height="7" rx="2" fill={isLight ? 'rgba(140,50,0,0.80)' : 'rgba(255,255,255,0.75)'} />
+                <rect x="9" y="9" width="7" height="7" rx="2" fill={isLight ? 'rgba(200,100,0,0.30)' : 'rgba(255,255,255,0.25)'} />
               </svg>
             </button>
 
@@ -781,33 +826,137 @@ export default function StudentDashboard() {
                 {/* backdrop */}
                 <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
                 <div
-                  className="absolute left-0 z-50 mt-2 rounded-2xl overflow-hidden"
+                  className="absolute left-0 z-50 mt-2 rounded-2xl"
                   style={{
-                    minWidth: 180,
-                    background: 'rgba(14,14,20,0.98)',
-                    backdropFilter: 'blur(28px)',
-                    WebkitBackdropFilter: 'blur(28px)',
-                    border: '1px solid rgba(255,255,255,0.10)',
-                    boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+                    minWidth: 230,
+                    background: isLight ? 'rgba(255,252,245,0.98)' : 'rgba(10,6,24,0.97)',
+                    backdropFilter: 'blur(32px)',
+                    WebkitBackdropFilter: 'blur(32px)',
+                    border: isLight ? '1.5px solid rgba(200,120,0,0.38)' : '1.5px solid rgba(160,100,255,0.45)',
+                    boxShadow: isLight
+                      ? '0 8px 40px rgba(180,80,0,0.18), 0 0 0 0.5px rgba(200,100,0,0.14), inset 0 1px 0 rgba(255,200,80,0.22)'
+                      : '0 8px 40px rgba(82,39,255,0.22), 0 0 0 0.5px rgba(82,39,255,0.18), inset 0 1px 0 rgba(255,130,252,0.18)',
+                    overflow: 'hidden',
                   }}
                 >
+                  {/* User info header */}
+                  {(profile?.name || blockName) && (
+                    <div style={{
+                      padding: '13px 16px 11px',
+                      borderBottom: isLight ? '1px solid rgba(200,100,0,0.16)' : '1px solid rgba(160,100,255,0.18)',
+                      background: isLight ? 'rgba(200,80,0,0.06)' : 'rgba(130,80,255,0.08)',
+                    }}>
+                      {profile?.name && (
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 700,
+                          color: isLight ? '#1a0800' : 'rgba(255,255,255,0.92)' }}>
+                          {profile.name}
+                        </p>
+                      )}
+                      {blockName && (
+                        <p style={{ margin: '2px 0 0', fontSize: 11, fontWeight: 500,
+                          color: isLight ? 'rgba(180,80,0,0.75)' : 'rgba(160,100,255,0.80)' }}>
+                          {blockName}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Theme toggle row */}
                   <button
                     onClick={() => { toggleTheme(); setShowMenu(false) }}
-                    className="w-full flex items-center gap-3 px-4 py-3 transition-colors"
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'transparent' }}
+                    className="w-full flex items-center gap-3 px-4 transition-all"
+                    style={{
+                      borderBottom: isLight ? '1px solid rgba(200,100,0,0.10)' : '1px solid rgba(160,100,255,0.12)',
+                      background: 'transparent', paddingTop: 12, paddingBottom: 12,
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = isLight ? 'rgba(200,80,0,0.07)' : 'rgba(130,80,255,0.09)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    <span style={{ fontSize: 16, lineHeight: 1 }}>{theme === 'dark' ? '☀️' : '🌙'}</span>
-                    <span className="text-[13px] font-semibold" style={{ color: 'rgba(255,255,255,0.78)' }}>
-                      {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                    {/* Icon pill — sun (light mode) or moon (dark mode) */}
+                    <span style={{
+                      width: 30, height: 30, borderRadius: 9, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: isLight ? 'rgba(200,80,0,0.12)' : 'rgba(255,200,80,0.13)',
+                    }}>
+                      {isLight ? (
+                        /* Moon SVG */
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+                            stroke={isLight ? '#C25A00' : '#FFD060'} strokeWidth="2"
+                            strokeLinecap="round" strokeLinejoin="round"
+                            fill={isLight ? 'rgba(180,80,0,0.18)' : 'rgba(255,200,80,0.18)'} />
+                        </svg>
+                      ) : (
+                        /* Sun SVG */
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="4"
+                            stroke="#FFD060" strokeWidth="2"
+                            fill="rgba(255,200,80,0.20)" />
+                          <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+                            stroke="#FFD060" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                      )}
                     </span>
+                    {/* Label */}
+                    <div style={{ flex: 1, textAlign: 'left' }}>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600,
+                        color: isLight ? '#1a0800' : 'rgba(255,255,255,0.88)' }}>
+                        {isLight ? 'Dark mode' : 'Light mode'}
+                      </p>
+                      <p style={{ margin: '1px 0 0', fontSize: 10, fontWeight: 500,
+                        color: isLight ? 'rgba(160,70,0,0.60)' : 'rgba(160,100,255,0.65)' }}>
+                        {isLight ? 'Switch to dark theme' : 'Switch to light theme'}
+                      </p>
+                    </div>
+                    {/* Toggle pill */}
+                    <div style={{
+                      width: 36, height: 20, borderRadius: 10, flexShrink: 0,
+                      background: isLight ? 'rgba(180,80,0,0.22)' : 'rgba(160,100,255,0.28)',
+                      position: 'relative',
+                      border: isLight ? '1px solid rgba(200,100,0,0.35)' : '1px solid rgba(160,100,255,0.40)',
+                      transition: 'background 0.3s',
+                    }}>
+                      <div style={{
+                        position: 'absolute', top: 3,
+                        left: isLight ? 3 : 17,
+                        width: 14, height: 14, borderRadius: '50%',
+                        background: '#fff',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
+                        transition: 'left 0.28s cubic-bezier(0.34,1.56,0.64,1)',
+                      }} />
+                    </div>
                   </button>
+
+                  {/* Sign out row */}
                   <button
                     onClick={() => { clearSession(); navigate('/login', { replace: true }) }}
-                    className="w-full flex items-center gap-3 px-4 py-3 transition-colors"
-                    style={{ background: 'transparent' }}
+                    className="w-full flex items-center gap-3 px-4 transition-all"
+                    style={{ background: 'transparent', paddingTop: 12, paddingBottom: 12 }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(226,55,68,0.09)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    <span style={{ fontSize: 16, lineHeight: 1 }}>🚪</span>
-                    <span className="text-[13px] font-semibold" style={{ color: '#E23744' }}>Sign out</span>
+                    {/* Log-out arrow icon */}
+                    <span style={{
+                      width: 30, height: 30, borderRadius: 9, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: 'rgba(226,55,68,0.12)',
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+                          stroke="#E23744" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="16 17 21 12 16 7"
+                          stroke="#E23744" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <line x1="21" y1="12" x2="9" y2="12"
+                          stroke="#E23744" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                    </span>
+                    <div style={{ flex: 1, textAlign: 'left' }}>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#E23744' }}>Sign out</p>
+                      <p style={{ margin: '1px 0 0', fontSize: 10, fontWeight: 500,
+                        color: 'rgba(226,55,68,0.55)' }}>
+                        End your session
+                      </p>
+                    </div>
                   </button>
                 </div>
               </>
@@ -816,10 +965,18 @@ export default function StudentDashboard() {
 
           {/* Brand */}
           <div className="text-center select-none">
-            <p style={{ fontSize: 17, fontWeight: 900, color: '#FFB830', letterSpacing: '0.22em', lineHeight: 1.1 }}>
+            <p style={{ fontSize: 17, fontWeight: 900,
+              color: isLight ? '#C25A00' : '#FFB830',
+              letterSpacing: '0.22em', lineHeight: 1.1,
+              transition: 'color 0.4s ease',
+            }}>
               MESSLOO
             </p>
-            <p style={{ fontSize: 8, fontWeight: 600, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.14em', marginTop: 1 }}>
+            <p style={{ fontSize: 8, fontWeight: 600,
+              color: isLight ? 'rgba(160,70,0,0.50)' : 'rgba(255,255,255,0.3)',
+              letterSpacing: '0.14em', marginTop: 1,
+              transition: 'color 0.4s ease',
+            }}>
               VIT – AP MESS
             </p>
           </div>
@@ -830,8 +987,12 @@ export default function StudentDashboard() {
               onClick={() => { clearSession(); navigate('/login', { replace: true }) }}
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90"
               style={{
-                background: 'linear-gradient(135deg, #FFB830 0%, #E6A000 100%)',
-                boxShadow: '0 3px 12px rgba(255,184,48,0.45)',
+                background: isLight
+                  ? 'linear-gradient(135deg, #E8500A 0%, #C25A00 100%)'
+                  : 'linear-gradient(135deg, #FFB830 0%, #E6A000 100%)',
+                boxShadow: isLight
+                  ? '0 3px 12px rgba(200,80,0,0.45)'
+                  : '0 3px 12px rgba(255,184,48,0.45)',
               }}
             >
               {blockCategory === 'LH' ? (
@@ -855,7 +1016,11 @@ export default function StudentDashboard() {
         {offline && (
           <div
             className="text-center py-1.5 text-[10px] font-bold tracking-widest uppercase"
-            style={{ background: 'rgba(255,184,48,0.07)', color: 'rgba(255,184,48,0.8)', borderTop: '1px solid rgba(255,184,48,0.12)' }}
+            style={{
+              background: isLight ? 'rgba(200,80,0,0.07)' : 'rgba(255,184,48,0.07)',
+              color: isLight ? 'rgba(180,70,0,0.80)' : 'rgba(255,184,48,0.80)',
+              borderTop: isLight ? '1px solid rgba(200,80,0,0.12)' : '1px solid rgba(255,184,48,0.12)',
+            }}
           >
             ⚡ Cached menu · Pull to refresh
           </div>
@@ -863,10 +1028,10 @@ export default function StudentDashboard() {
       </div>
 
       {/* ── Date navigation ── */}
-      <div className="px-5 pt-4 pb-2 max-w-lg mx-auto w-full">
+      <div className="px-4 pt-4 pb-2 max-w-2xl mx-auto w-full">
         <div className="flex items-center justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: 'rgba(255,184,48,0.65)' }}>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: accentText }}>
               {isToday ? '● Today' : '▷ Viewing'}
             </p>
             <h2
@@ -881,9 +1046,9 @@ export default function StudentDashboard() {
               onClick={() => setShowCalendar(!showCalendar)}
               className="w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90"
               style={{
-                background: showCalendar ? 'rgba(255,184,48,0.14)' : 'var(--toggle-bg)',
-                border: showCalendar ? '1px solid rgba(255,184,48,0.35)' : 'var(--card-border)',
-                color: showCalendar ? '#FFB830' : 'var(--text-muted)',
+                background: showCalendar ? accentBg : 'var(--toggle-bg)',
+                border: showCalendar ? `1px solid ${accentBorder}` : 'var(--card-border)',
+                color: showCalendar ? accentColor : 'var(--text-muted)',
               }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
@@ -917,7 +1082,7 @@ export default function StudentDashboard() {
               <button
                 onClick={() => { setSelectedDate(today); setShowCalendar(false) }}
                 className="text-[10px] font-bold px-2.5 py-1.5 rounded-xl transition-all active:scale-95"
-                style={{ background: 'rgba(255,184,48,0.12)', color: '#FFB830', border: '1px solid rgba(255,184,48,0.25)' }}
+                style={{ background: accentBg, color: accentColor, border: `1px solid ${accentBorder}` }}
               >
                 Today
               </button>
@@ -942,9 +1107,9 @@ export default function StudentDashboard() {
               <span
                 className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold"
                 style={{
-                  background: 'rgba(255,184,48,0.08)',
-                  color: '#FFB830',
-                  border: '1px solid rgba(255,184,48,0.18)',
+                  background: accentBg,
+                  color: accentColor,
+                  border: `1px solid ${accentBorder}`,
                 }}
               >
                 🏠 {blockName}{cateringCompany ? ` · ${cateringCompany}` : ''}
@@ -975,7 +1140,7 @@ export default function StudentDashboard() {
       {/* ── Error banners ── */}
       {(profileError || error) && (
         <div
-          className="mx-5 max-w-lg mb-2 rounded-2xl p-3 text-sm font-medium"
+          className="mx-4 max-w-2xl mb-2 rounded-2xl p-3 text-sm font-medium"
           style={{
             background: 'var(--error-bg)',
             color: 'var(--error-color)',
@@ -986,9 +1151,9 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      {/* ── Meal cards (2×2 grid) ── */}
-      <main className="px-5 pb-28 max-w-lg mx-auto w-full">
-        <div className="flex flex-col gap-3 mt-1">
+      {/* ── Meal cards ── */}
+      <main className="px-4 pb-28 max-w-2xl mx-auto w-full">
+        <div className="sd-meal-grid mt-1">
           {profileLoading || loading
             ? MEAL_ORDER.map((m) => <SkeletonCard key={m} />)
             : MEAL_ORDER.map((mt) => {
@@ -1008,60 +1173,67 @@ export default function StudentDashboard() {
               })
           }
 
-          {/* ── Ask Mess AI banner (full width) ── */}
+          {/* ── Ask Mess AI banner (spans full grid, horizontal) ── */}
           <button
             type="button"
             onClick={() => setShowAiChat(true)}
             className="w-full text-left transition-all active:scale-[0.98] relative overflow-hidden"
             style={{
+              gridColumn: '1 / -1',
               background: 'linear-gradient(135deg, #6D28D9 0%, #4F46E5 60%, #7C3AED 100%)',
               borderRadius: 20,
-              padding: '20px 20px 20px 22px',
-              minHeight: 110,
+              padding: '16px 20px',
               boxShadow: '0 8px 32px rgba(99,58,237,0.40), inset 0 1px 0 rgba(255,255,255,0.12)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
             }}
           >
+            {/* Decorative blobs */}
             <div style={{
-              position: 'absolute', top: -24, right: 64, width: 110, height: 110,
+              position: 'absolute', top: -20, right: 120, width: 90, height: 90,
               borderRadius: '50%', background: 'rgba(255,255,255,0.07)', pointerEvents: 'none',
             }} />
             <div style={{
-              position: 'absolute', bottom: -30, right: 20, width: 90, height: 90,
+              position: 'absolute', bottom: -24, right: 60, width: 70, height: 70,
               borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none',
             }} />
 
-            <div style={{ maxWidth: '62%', position: 'relative', zIndex: 1 }}>
-              <p style={{
-                fontSize: 17, fontWeight: 900, color: '#FFFFFF',
-                lineHeight: 1.25, letterSpacing: '-0.01em', marginBottom: 6,
-              }}>
-                Something Fresh Every Meal 🍽️
-              </p>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', marginBottom: 14, lineHeight: 1.4 }}>
-                Ask me about today's menu, specials, timings, and more.
-              </p>
+            {/* Left: emoji + text */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, position: 'relative', zIndex: 1, flex: 1, minWidth: 0 }}>
               <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5,
-                background: '#FFFFFF', borderRadius: 100,
-                padding: '6px 14px',
-                fontSize: 12, fontWeight: 800, color: '#4F46E5',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
-              }}>
-                Ask Now
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-                  <path d="M5 12H19M13 6L19 12L13 18" stroke="#4F46E5" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                fontSize: 40, lineHeight: 1, flexShrink: 0,
+                filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.25))',
+                userSelect: 'none',
+              }}>🤖</div>
+              <div style={{ minWidth: 0 }}>
+                <p style={{
+                  fontSize: 15, fontWeight: 900, color: '#FFFFFF',
+                  lineHeight: 1.2, letterSpacing: '-0.01em', margin: 0,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
+                  Something Fresh Every Meal 🍽️
+                </p>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.70)', margin: '3px 0 0', lineHeight: 1.35 }}>
+                  Ask about today's menu, specials & timings
+                </p>
               </div>
             </div>
 
+            {/* Right: CTA pill */}
             <div style={{
-              position: 'absolute', right: 14, top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: 72, lineHeight: 1,
-              filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.25))',
-              userSelect: 'none', pointerEvents: 'none', zIndex: 1,
+              flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: '#FFFFFF', borderRadius: 100,
+              padding: '8px 16px',
+              fontSize: 12, fontWeight: 800, color: '#4F46E5',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
+              position: 'relative', zIndex: 1,
             }}>
-              🤖
+              Ask Now
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12H19M13 6L19 12L13 18" stroke="#4F46E5" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </div>
           </button>
         </div>

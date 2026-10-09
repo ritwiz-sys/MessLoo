@@ -3,21 +3,25 @@
 /* Outer wrapper — hover glow */
 .meal-card-outer {
   width: 100%;
-  border-radius: 20px;
-  /* Removes 300ms tap delay AND prevents scroll-interfering gestures */
+  border-radius: 22px;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-select: none;
   transition:
     filter 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   will-change: filter, transform;
 }
 
+/* Active meal — purple/pink persistent glow */
+.meal-card-outer.meal-card-active {
+  filter: drop-shadow(0 8px 28px rgba(130,80,255,0.55)) drop-shadow(0 2px 8px rgba(255,100,252,0.25));
+}
+
 .meal-card-outer:hover {
-  filter: drop-shadow(0 14px 32px var(--meal-glow, rgba(0,0,0,0.35)));
-  transform: translateY(-2px);
+  filter: drop-shadow(0 16px 40px rgba(130,80,255,0.60)) drop-shadow(0 4px 16px rgba(255,100,252,0.30));
+  transform: translateY(-3px);
 }
 
 .meal-card-outer:active {
@@ -61,12 +65,27 @@
   transform: translateX(4px);
 }
 
-/* Back face — glass morphism */
+/* Back face — glass morphism with purple/pink border */
 .meal-back-face {
   background: var(--card-bg);
   backdrop-filter: var(--card-blur);
   -webkit-backdrop-filter: var(--card-blur);
-  border: var(--card-border);
+  border: 1.5px solid rgba(160,100,255,0.45);
+  box-shadow: inset 0 1px 0 rgba(255,130,252,0.20), 0 0 0 0.5px rgba(82,39,255,0.18);
+}
+
+/* Light mode overrides — warm amber palette */
+[data-theme="light"] .meal-back-face {
+  border: 1.5px solid rgba(200,120,0,0.35);
+  box-shadow: inset 0 1px 0 rgba(255,200,80,0.22), 0 4px 20px rgba(160,80,0,0.10);
+}
+
+[data-theme="light"] .meal-card-outer.meal-card-active {
+  filter: drop-shadow(0 8px 28px rgba(200,100,0,0.35)) drop-shadow(0 2px 8px rgba(255,160,0,0.22));
+}
+
+[data-theme="light"] .meal-card-outer:hover {
+  filter: drop-shadow(0 16px 40px rgba(200,100,0,0.40)) drop-shadow(0 4px 16px rgba(255,160,0,0.25));
 }
 
 /* CTA button hover lift */

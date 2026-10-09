@@ -4,6 +4,8 @@ import { api } from '../lib/api'
 import { useUserContext } from '../context/UserContext'
 import { clearSession, getSession } from '../lib/auth'
 import BottomTabBar from '../components/BottomTabBar'
+import MoltenMetal from '../components/MoltenMetal'
+import { useTheme } from '../hooks/useTheme'
 
 // ── Dish chip ─────────────────────────────────────────────────────────────────
 function DishChip({ name, type, onRemove }) {
@@ -309,6 +311,8 @@ function BlockSheet({ currentBlockId, onClose, onConfirm }) {
 export default function ProfilePage() {
   const navigate = useNavigate()
   const session = getSession()
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
   const { profile, blockName, cateringCompany, updateBlock, refetch } = useUserContext()
 
   const [preferences, setPreferences] = useState({ liked_dishes: [], disliked_dishes: [] })
@@ -448,19 +452,63 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'transparent' }}>
+    <div className="min-h-screen flex flex-col" style={{
+      background: isLight ? '#fffcf5' : '#0d0d11',
+      overflowX: 'hidden',
+      position: 'relative',
+      transition: 'background 0.5s ease',
+    }}>
+
+      {/* ── MoltenMetal background ── */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+        <MoltenMetal
+          color1={isLight ? '#D94A00' : '#5227FF'}
+          color2={isLight ? '#FF8C00' : '#FF9FFC'}
+          color3={isLight ? '#FFD060' : '#FFFFFF'}
+          speed={isLight ? 0.28 : 0.35}
+          scale={isLight ? 3.5 : 4}
+          detail={3}
+          glow={isLight ? 2.2 : 1.6}
+          coreSize={isLight ? 0.14 : 0.1}
+          swirl={isLight ? 0.8 : 1}
+          fold={isLight ? -0.15 : -0.2}
+          blackPoint={isLight ? 0.01 : 0.05}
+          brightness={isLight ? 1.8 : 1.3}
+          colorMode="molten"
+          grain
+          grainIntensity={0.05}
+          mouseInteraction={false}
+          mouseStrength={0.3}
+          opacity={isLight ? 0.72 : 1}
+          lightMode={false}
+          backgroundColor="#000000"
+        />
+      </div>
+
       {/* ── Header ── */}
       <header
         className="px-4 pb-5"
         style={{
           paddingTop: 'max(40px, calc(env(safe-area-inset-top, 0px) + 10px))',
-          background: 'transparent',
+          background: isLight ? 'rgba(255,252,245,0.96)' : 'rgba(13,13,17,0.96)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: isLight ? '1px solid rgba(200,120,0,0.14)' : '1px solid rgba(255,184,48,0.08)',
+          position: 'relative',
+          zIndex: 10,
         }}
       >
         <div className="max-w-lg mx-auto flex items-center gap-4">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-            style={{ background: '#E23744' }}
+            style={{
+              background: isLight
+                ? 'linear-gradient(135deg, #E8500A 0%, #C25A00 100%)'
+                : 'linear-gradient(135deg, #FFB830 0%, #E6A000 100%)',
+              boxShadow: isLight
+                ? '0 3px 12px rgba(200,80,0,0.45)'
+                : '0 3px 12px rgba(255,184,48,0.45)',
+            }}
           >
             🎓
           </div>
@@ -482,7 +530,7 @@ export default function ProfilePage() {
       </header>
 
       {/* ── Scrollable content ── */}
-      <main className="flex-1 overflow-y-auto px-4 pb-28 max-w-lg mx-auto w-full">
+      <main className="flex-1 overflow-y-auto px-4 pb-28 max-w-lg mx-auto w-full" style={{ position: 'relative', zIndex: 1 }}>
         {typeof navigator !== 'undefined' && !navigator.onLine && (
           <div 
             className="mb-4 rounded-2xl p-3 text-xs font-semibold flex items-center gap-2 mt-4"

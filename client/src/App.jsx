@@ -2,12 +2,14 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { getSession, isAdmin } from './lib/auth'
 import { UserProvider } from './context/UserContext'
 import AppBackground from './components/AppBackground'
+import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import StudentDashboard from './pages/StudentDashboard'
 import ChatPage from './pages/ChatPage'
 import ProfilePage from './pages/ProfilePage'
 import AdminDashboard from './pages/AdminDashboard'
 import InvitePage from './pages/InvitePage'
+import PlateRevealPage from './pages/PlateRevealPage'
 
 function RequireAuth({ children }) {
   const session = getSession()
@@ -22,7 +24,7 @@ function RequireAdmin({ children }) {
 
 function Home() {
   const session = getSession()
-  if (!session) return <Navigate to="/login" replace />
+  if (!session) return <LandingPage />
   if (session.role === 'admin') return <Navigate to="/admin" replace />
   return <Navigate to="/dashboard" replace />
 }
@@ -37,6 +39,7 @@ function App() {
         <Route path="/"       element={<Home />} />
         <Route path="/login"  element={<LoginPage />} />
         <Route path="/invite" element={<InvitePage />} />
+        <Route path="/reveal" element={<PlateRevealPage />} />
 
         {/* Student routes */}
         <Route path="/dashboard" element={<RequireAuth><StudentDashboard /></RequireAuth>} />

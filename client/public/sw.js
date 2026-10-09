@@ -580,8 +580,10 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     fetch(request)
       .then((res) => {
-        if (res.ok) {
-          caches.open(CACHE_PAGES).then((c) => c.put(request, res.clone()))
+        // 206 Partial Content cannot be stored in the Cache API
+        if (res.ok && res.status !== 206) {
+          const toCache = res.clone()
+          caches.open(CACHE_PAGES).then((c) => c.put(request, toCache))
         }
         return res
       })

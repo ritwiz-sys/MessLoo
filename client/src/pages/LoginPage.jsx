@@ -1,18 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { setSession } from '../lib/auth'
 import { api } from '../lib/api'
+import './LoginPage.css'
 
 // ── Block data ────────────────────────────────────────────────────────────────
 const MH_BLOCKS = ['MH1', 'MH2', 'MH3', 'MH4', 'MH5', 'MH6', 'MH7']
 const LH_BLOCKS = ['LH1', 'LH2', 'LH3', 'LH4']
 
-// ── Step definitions ──────────────────────────────────────────────────────────
-// role → block → subblock → (logged in)
-//   └→ admin → (logged in)
+// ── SVG Logo mark ─────────────────────────────────────────────────────────────
+function LogoMark() {
+  return (
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="20" width="24" height="4" rx="2" fill="rgba(255,255,255,0.90)"/>
+      <path d="M8 20C8 13.373 12.477 8 18 8C23.523 8 28 13.373 28 20H8Z" fill="rgba(255,255,255,0.80)"/>
+      <path d="M13 5 Q14.5 2.5 13 0" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M18 5 Q19.5 2.5 18 0" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M23 5 Q24.5 2.5 23 0" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" strokeLinecap="round"/>
+      <rect x="4" y="24" width="28" height="3" rx="1.5" fill="rgba(255,255,255,0.60)"/>
+    </svg>
+  )
+}
 
 // ── Animated step wrapper ─────────────────────────────────────────────────────
-// Each new step slides in from the right; going back slides from the left.
 function StepView({ children, dir }) {
   const [visible, setVisible] = useState(false)
   useEffect(() => {
@@ -20,13 +30,11 @@ function StepView({ children, dir }) {
     return () => clearTimeout(t)
   }, [])
   return (
-    <div
-      style={{
-        opacity:    visible ? 1 : 0,
-        transform:  visible ? 'translateX(0)' : `translateX(${dir === 'back' ? '-24px' : '24px'})`,
-        transition: 'opacity 0.28s ease, transform 0.28s ease',
-      }}
-    >
+    <div style={{
+      opacity:    visible ? 1 : 0,
+      transform:  visible ? 'translateX(0)' : `translateX(${dir === 'back' ? '-24px' : '24px'})`,
+      transition: 'opacity 0.28s ease, transform 0.28s ease',
+    }}>
       {children}
     </div>
   )
@@ -35,11 +43,14 @@ function StepView({ children, dir }) {
 // ── Back button ───────────────────────────────────────────────────────────────
 function BackBtn({ onClick }) {
   return (
-    <button
-      onClick={onClick}
-      className="mb-5 text-sm font-semibold flex items-center gap-1.5 active:opacity-60"
-      style={{ color: 'var(--text-muted)', background: 'none', border: 'none', padding: 0 }}
-    >
+    <button onClick={onClick} style={{
+      display: 'flex', alignItems: 'center', gap: 6,
+      background: 'none', border: 'none', padding: 0,
+      marginBottom: 18, cursor: 'pointer',
+      color: 'rgba(42,26,8,.45)',
+      fontSize: 13, fontWeight: 700,
+      fontFamily: 'inherit',
+    }}>
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
@@ -54,17 +65,27 @@ function PrimaryBtn({ children, onClick, disabled, loading }) {
     <button
       onClick={onClick}
       disabled={disabled || loading}
-      className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-all active:scale-95"
       style={{
-        background: disabled || loading ? 'rgba(226,55,68,0.38)' : 'linear-gradient(135deg,#E23744,#C02030)',
-        color: '#fff',
-        boxShadow: disabled || loading ? 'none' : '0 6px 20px rgba(226,55,68,0.35)',
+        width: '100%',
+        padding: '14px 0',
+        borderRadius: 16,
+        border: 'none',
+        fontWeight: 800,
+        fontSize: 15,
+        fontFamily: 'inherit',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         cursor: disabled || loading ? 'not-allowed' : 'pointer',
+        background: disabled || loading
+          ? 'rgba(42,26,8,0.12)'
+          : 'linear-gradient(135deg, #2a1a08, #3d2810)',
+        color: disabled || loading ? 'rgba(42,26,8,0.35)' : '#f5ede0',
+        boxShadow: disabled || loading ? 'none' : '0 6px 22px rgba(42,26,8,0.28)',
+        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
       }}
+      onMouseDown={e => { if (!(disabled || loading)) e.currentTarget.style.transform = 'scale(0.96)' }}
+      onMouseUp={e   => { e.currentTarget.style.transform = '' }}
     >
-      {loading
-        ? <><Spinner /> Checking…</>
-        : children}
+      {loading ? <><Spinner /> Checking…</> : children}
     </button>
   )
 }
@@ -72,8 +93,8 @@ function PrimaryBtn({ children, onClick, disabled, loading }) {
 function Spinner() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}>
-      <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" strokeWidth="3"/>
-      <path d="M12 2a10 10 0 0 1 10 10" stroke="#fff" strokeWidth="3" strokeLinecap="round"/>
+      <circle cx="12" cy="12" r="10" stroke="rgba(42,26,8,0.2)" strokeWidth="3"/>
+      <path d="M12 2a10 10 0 0 1 10 10" stroke="#2a1a08" strokeWidth="3" strokeLinecap="round"/>
     </svg>
   )
 }
@@ -81,32 +102,32 @@ function Spinner() {
 // ── Section heading ───────────────────────────────────────────────────────────
 function Heading({ title, sub }) {
   return (
-    <div className="mb-6">
-      <h2 className="text-xl font-extrabold mb-1" style={{ color: 'var(--text-primary)' }}>{title}</h2>
-      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{sub}</p>
+    <div style={{ marginBottom: 20 }}>
+      <h2 className="login-heading-title">{title}</h2>
+      <p className="login-heading-sub">{sub}</p>
     </div>
   )
 }
 
-// ── Progress indicator (dots) ─────────────────────────────────────────────────
-const STEP_COUNT = { role: 0, block: 1, subblock: 2, admin: 1 }
-const STEP_TOTAL = { student: 3, admin: 2 }
+// ── Progress dots ─────────────────────────────────────────────────────────────
+const STEP_COUNT = { block: 0, subblock: 1, admin: 0 }
+const STEP_TOTAL = { student: 2, admin: 1 }
 
 function ProgressDots({ step, isAdmin }) {
-  const total = isAdmin ? STEP_TOTAL.admin : STEP_TOTAL.student
+  const total   = isAdmin ? STEP_TOTAL.admin : STEP_TOTAL.student
   const current = STEP_COUNT[step] ?? 0
   return (
-    <div className="flex items-center gap-2 mb-7">
+    <div className="login-dots-wrap">
       {Array.from({ length: total }).map((_, i) => (
-        <div
-          key={i}
-          className="rounded-full transition-all duration-300"
-          style={{
-            width:  i === current ? 20 : 6,
-            height: 6,
-            background: i <= current ? '#E23744' : 'var(--handle-color)',
-          }}
-        />
+        <div key={i} style={{
+          borderRadius: 99,
+          height: 5,
+          width: i === current ? 20 : 5,
+          background: i <= current
+            ? 'linear-gradient(90deg, #c08a22, #d4a017)'
+            : 'rgba(42,26,8,.15)',
+          transition: 'width 0.3s ease, background 0.3s ease',
+        }} />
       ))}
     </div>
   )
@@ -114,10 +135,13 @@ function ProgressDots({ step, isAdmin }) {
 
 // ── Main LoginPage ────────────────────────────────────────────────────────────
 export default function LoginPage() {
-  const navigate = useNavigate()
-  const [step, setStep]         = useState('role')
-  const [dir, setDir]           = useState('forward')   // animation direction
-  const [stepKey, setStepKey]   = useState(0)           // forces StepView remount
+  const navigate   = useNavigate()
+  const location   = useLocation()
+  const presetRole = location?.state?.role
+
+  const [step, setStep]         = useState(() => presetRole === 'admin' ? 'admin' : 'block')
+  const [dir, setDir]           = useState('forward')
+  const [stepKey, setStepKey]   = useState(0)
   const [blockCat, setBlockCat] = useState(null)
   const [password, setPassword] = useState('')
   const [error, setError]       = useState(null)
@@ -130,20 +154,12 @@ export default function LoginPage() {
     setError(null)
   }
 
-  function handleCategory(cat) {
-    setBlockCat(cat)
-    go('subblock')
-  }
-
-  function handleBlock(block) {
-    setSession({ role: 'student', block })
-    navigate('/dashboard', { replace: true })
-  }
+  function handleCategory(cat) { setBlockCat(cat); go('subblock') }
+  function handleBlock(block)  { setSession({ role: 'student', block }); navigate('/dashboard', { replace: true }) }
 
   async function handleAdminLogin(e) {
     e?.preventDefault()
-    setError(null)
-    setLoading(true)
+    setError(null); setLoading(true)
     try {
       const { token } = await api.adminLogin(password)
       setSession({ role: 'admin', block: 'MH', adminToken: token })
@@ -158,208 +174,153 @@ export default function LoginPage() {
   const isAdmin = step === 'admin'
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center px-5 py-10"
-      style={{ background: 'transparent' }}
-    >
+    <div className="login-root">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* ── Logo ── */}
-      <div
-        className="mb-8 flex flex-col items-center gap-2"
-        style={{ animation: 'step-in 0.5s ease both' }}
-      >
-        <div
-          className="h-16 w-16 rounded-3xl flex items-center justify-center text-3xl"
-          style={{
-            background: 'linear-gradient(145deg, #E23744, #C02030)',
-            boxShadow: '0 10px 28px rgba(226,55,68,0.35)',
-          }}
-        >
-          🍱
-        </div>
-        <span className="text-2xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>
-          MessLoo
-        </span>
-        <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-          VIT-AP mess companion
-        </span>
+      <div className="login-logo">
+        <div className="login-logo-icon"><LogoMark /></div>
+        <span className="login-logo-name">MessLoo</span>
+        <span className="login-logo-sub">VIT-AP · Mess companion</span>
       </div>
 
       {/* ── Card ── */}
-      <div
-        className="w-full max-w-sm rounded-3xl p-6 overflow-hidden"
-        style={{
-          background: 'var(--card-bg)',
-          backdropFilter: 'var(--card-blur)',
-          WebkitBackdropFilter: 'var(--card-blur)',
-          border: 'var(--card-border)',
-          boxShadow: '0 8px 40px rgba(0,0,0,0.10)',
-        }}
-      >
-        <ProgressDots step={step} isAdmin={isAdmin} />
+      <div className="login-card-wrap" style={{ maxWidth: 380 }}>
+        <div className="login-glass-card">
+          {/* Gold accent stripe */}
+          <div className="login-card-accent" />
 
-        <StepView key={stepKey} dir={dir}>
+          <ProgressDots step={step} isAdmin={isAdmin} />
 
-          {/* ────────────── STEP: role ────────────── */}
-          {step === 'role' && (
-            <>
-              <Heading title="Welcome back 👋" sub="Choose how you'd like to continue" />
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={() => go('block')}
-                  className="w-full py-4 rounded-2xl font-bold text-base flex items-center gap-4 px-5 transition-all active:scale-95"
-                  style={{
-                    background: 'linear-gradient(135deg,#E23744,#C02030)',
-                    color: '#fff',
-                    boxShadow: '0 6px 20px rgba(226,55,68,0.32)',
-                  }}
-                >
-                  <span className="text-2xl">🎓</span>
-                  <span className="flex flex-col items-start">
-                    <span className="text-base font-extrabold">Student</span>
-                    <span className="text-xs font-medium opacity-75">Pick your block to see the menu</span>
-                  </span>
-                  <span className="ml-auto opacity-60">›</span>
-                </button>
+          <StepView key={stepKey} dir={dir}>
 
-                <button
-                  onClick={() => go('admin')}
-                  className="w-full py-4 rounded-2xl font-bold text-base flex items-center gap-4 px-5 transition-all active:scale-95"
-                  style={{
-                    background: 'var(--toggle-bg)',
-                    color: 'var(--text-primary)',
-                    border: '1px solid var(--dish-border)',
-                  }}
-                >
-                  <span className="text-2xl">🔑</span>
-                  <span className="flex flex-col items-start">
-                    <span className="text-base font-extrabold">Admin</span>
-                    <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Manage menus & analytics</span>
-                  </span>
-                  <span className="ml-auto" style={{ color: 'var(--text-muted)' }}>›</span>
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* ────────────── STEP: block (MH / LH) ────────────── */}
-          {step === 'block' && (
-            <>
-              <BackBtn onClick={() => go('role', 'back')} />
-              <Heading title="Pick your mess 🏠" sub="Which hostel are you in?" />
-              <div className="flex flex-col gap-3">
-                {[
-                  { cat: 'MH', label: "Men's Hostel", sub: 'MH1 – MH7', emoji: '🏠', color: '#4A90E2' },
-                  { cat: 'LH', label: "Ladies' Hostel", sub: 'LH1 – LH4', emoji: '🏡', color: '#E2779A' },
-                ].map(({ cat, label, sub, emoji, color }) => (
-                  <button
-                    key={cat}
-                    onClick={() => handleCategory(cat)}
-                    className="w-full py-4 rounded-2xl flex items-center gap-4 px-5 transition-all active:scale-95"
-                    style={{
-                      background: `${color}18`,
-                      border: `1.5px solid ${color}35`,
-                      color: 'var(--text-primary)',
-                    }}
-                  >
-                    <span
-                      className="text-xl h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: `${color}22`, fontSize: 20 }}
-                    >
-                      {emoji}
-                    </span>
-                    <span className="flex flex-col items-start">
-                      <span className="text-base font-extrabold">{cat} — {label}</span>
-                      <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{sub}</span>
-                    </span>
-                    <span className="ml-auto" style={{ color: 'var(--text-muted)' }}>›</span>
+            {/* ── STEP: block (MH / LH) ── */}
+            {step === 'block' && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+                  <Heading title="Pick your mess 🏠" sub="Which hostel are you in?" />
+                  <button className="login-admin-btn" onClick={() => go('admin')} style={{ marginTop: 2, flexShrink: 0 }}>
+                    Admin →
                   </button>
-                ))}
-              </div>
-            </>
-          )}
+                </div>
 
-          {/* ────────────── STEP: subblock ────────────── */}
-          {step === 'subblock' && (
-            <>
-              <BackBtn onClick={() => { setBlockCat(null); go('block', 'back') }} />
-              <Heading
-                title={blockCat === 'MH' ? '🏠 Men\'s Hostel' : '🏡 Ladies\' Hostel'}
-                sub="Tap your block number"
-              />
-              <div className="grid grid-cols-3 gap-3">
-                {(blockCat === 'MH' ? MH_BLOCKS : LH_BLOCKS).map((block, i) => (
-                  <button
-                    key={block}
-                    onClick={() => handleBlock(block)}
-                    className="py-4 rounded-2xl font-extrabold text-base transition-all active:scale-90"
-                    style={{
-                      background: 'linear-gradient(135deg,#E23744,#C02030)',
-                      color: '#fff',
-                      boxShadow: '0 4px 14px rgba(226,55,68,0.28)',
-                      animation: `badge-pop 0.3s ease ${i * 0.04}s both`,
-                    }}
-                  >
-                    {block}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <button className="login-block-btn login-block-btn--mh" onClick={() => handleCategory('MH')}>
+                    <span className="login-block-icon login-block-icon--mh">🏠</span>
+                    <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <span className="login-block-label">MH — Men's Hostel</span>
+                      <span className="login-block-sub">MH1 – MH7 · 7 blocks</span>
+                    </span>
+                    <span className="login-block-arrow">›</span>
                   </button>
-                ))}
-              </div>
-              <style>{`
-                @keyframes badge-pop {
-                  0%   { transform: scale(0.75); opacity: 0; }
-                  60%  { transform: scale(1.06); }
-                  100% { transform: scale(1);    opacity: 1; }
-                }
-              `}</style>
-            </>
-          )}
 
-          {/* ────────────── STEP: admin ────────────── */}
-          {step === 'admin' && (
-            <>
-              <BackBtn onClick={() => { setError(null); setPassword(''); go('role', 'back') }} />
-              <Heading title="Admin login 🔑" sub="Enter the admin password to continue" />
-              <form onSubmit={handleAdminLogin} className="flex flex-col gap-3">
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoFocus
-                  className="w-full px-4 py-3.5 rounded-xl text-base font-medium outline-none transition-all"
-                  style={{
-                    background: 'var(--input-bg)',
-                    border: '1.5px solid var(--input-border)',
-                    color: 'var(--text-primary)',
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = '#E23744')}
-                  onBlur={(e)  => (e.target.style.borderColor = 'var(--input-border)')}
+                  <button className="login-block-btn login-block-btn--lh" onClick={() => handleCategory('LH')}>
+                    <span className="login-block-icon login-block-icon--lh">🏡</span>
+                    <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <span className="login-block-label">LH — Ladies' Hostel</span>
+                      <span className="login-block-sub">LH1 – LH4 · 4 blocks</span>
+                    </span>
+                    <span className="login-block-arrow">›</span>
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* ── STEP: subblock ── */}
+            {step === 'subblock' && (
+              <>
+                <BackBtn onClick={() => { setBlockCat(null); go('block', 'back') }} />
+                <Heading
+                  title={blockCat === 'MH' ? "🏠 Men's Hostel" : "🏡 Ladies' Hostel"}
+                  sub="Tap your block number"
                 />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                  {(blockCat === 'MH' ? MH_BLOCKS : LH_BLOCKS).map((block, i) => (
+                    <button
+                      key={block}
+                      onClick={() => handleBlock(block)}
+                      style={{
+                        padding: '14px 0',
+                        borderRadius: 14,
+                        border: 'none',
+                        fontWeight: 800,
+                        fontFamily: 'inherit',
+                        fontSize: 14,
+                        cursor: 'pointer',
+                        background: 'linear-gradient(135deg, #2a1a08, #3d2810)',
+                        color: '#f5ede0',
+                        boxShadow: '0 4px 14px rgba(42,26,8,0.22)',
+                        animation: `badge-pop 0.3s ease ${i * 0.04}s both`,
+                        transition: 'transform 0.15s ease',
+                      }}
+                      onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.92)')}
+                      onMouseUp={e   => (e.currentTarget.style.transform = '')}
+                    >
+                      {block}
+                    </button>
+                  ))}
+                </div>
+                <style>{`@keyframes badge-pop { 0%{transform:scale(.75);opacity:0} 60%{transform:scale(1.06)} 100%{transform:scale(1);opacity:1} }`}</style>
+              </>
+            )}
 
-                {error && (
-                  <div
-                    className="px-4 py-2.5 rounded-xl text-sm font-semibold"
-                    style={{ background: 'var(--error-bg)', color: 'var(--error-color)', border: '1px solid var(--error-border)' }}
-                  >
-                    {error}
-                  </div>
-                )}
+            {/* ── STEP: admin ── */}
+            {step === 'admin' && (
+              <>
+                <BackBtn onClick={() => { setError(null); setPassword(''); go('block', 'back') }} />
+                <Heading title="Admin login 🔑" sub="Enter the admin password to continue" />
+                <form onSubmit={handleAdminLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                    autoFocus
+                    style={{
+                      width: '100%',
+                      padding: '13px 16px',
+                      borderRadius: 14,
+                      border: '1.5px solid rgba(180,140,90,.30)',
+                      background: 'rgba(255,252,246,0.70)',
+                      color: '#1a0e06',
+                      fontSize: 16,
+                      fontWeight: 500,
+                      fontFamily: 'inherit',
+                      outline: 'none',
+                      transition: 'border-color 0.2s ease',
+                      boxSizing: 'border-box',
+                    }}
+                    onFocus={e => (e.target.style.borderColor = '#c08a22')}
+                    onBlur={e  => (e.target.style.borderColor = 'rgba(180,140,90,.30)')}
+                  />
 
-                <PrimaryBtn disabled={!password} loading={loading}>
-                  Enter →
-                </PrimaryBtn>
-              </form>
-            </>
-          )}
+                  {error && (
+                    <div style={{
+                      padding: '10px 14px',
+                      borderRadius: 12,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      background: 'rgba(226,55,68,.08)',
+                      color: '#c02030',
+                      border: '1px solid rgba(226,55,68,.20)',
+                    }}>
+                      {error}
+                    </div>
+                  )}
 
-        </StepView>
+                  <PrimaryBtn disabled={!password} loading={loading}>
+                    Enter →
+                  </PrimaryBtn>
+                </form>
+              </>
+            )}
+
+          </StepView>
+        </div>
       </div>
 
-      {/* ── Footer ── */}
-      <p className="mt-6 text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-        VIT-AP University · Mess Management System
-      </p>
+      <p className="login-footer">VIT-AP University · Mess Management System</p>
     </div>
   )
 }
